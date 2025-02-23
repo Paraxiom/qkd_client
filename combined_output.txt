@@ -1,7 +1,7 @@
 === COMBINED LOGS AND CODE ===
 >>> RUNTIME LOGS
 ================================================
-Sun Feb 23 12:58:09 PM EST 2025
+Sun Feb 23 06:08:25 PM EST 2025
 ================================================
 warning: unused import: `ark_bn254::Fr`
  --> src/quantum_auth/commitment.rs:1:5
@@ -48,30 +48,6 @@ warning: unused import: `ark_bn254::Fr`
 1 | use ark_bn254::Fr;
   |     ^^^^^^^^^^^^^
 
-warning: variable does not need to be mutable
-  --> src/main.rs:65:9
-   |
-65 |     let mut quantum_auth = QuantumAuthenticator::new()?;
-   |         ----^^^^^^^^^^^^
-   |         |
-   |         help: remove this `mut`
-   |
-   = note: `#[warn(unused_mut)]` on by default
-
-warning: unused import: `ark_ff::PrimeField`
-  --> src/main.rs:15:5
-   |
-15 | use ark_ff::PrimeField;
-   |     ^^^^^^^^^^^^^^^^^^
-
-warning: variable does not need to be mutable
-  --> src/quantum_auth/commitment.rs:13:13
-   |
-13 |         let mut value = [0u8; 32];
-   |             ----^^^^^
-   |             |
-   |             help: remove this `mut`
-
 warning: function `build_test_circuit` is never used
  --> src/zk/circuit.rs:6:14
   |
@@ -80,246 +56,83 @@ warning: function `build_test_circuit` is never used
   |
   = note: `#[warn(dead_code)]` on by default
 
-warning: `qkd_client` (bin "qkd_client") generated 7 warnings (1 duplicate) (run `cargo fix --bin "qkd_client"` to apply 4 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s
+warning: `qkd_client` (bin "qkd_client") generated 5 warnings (2 duplicates) (run `cargo fix --bin "qkd_client"` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s
      Running `target/debug/qkd_client`
-🌟 Testing connection...
-
-
-🔄 Testing IP: 192.168.0.4
-
-🔍 Trying connection to https://192.168.0.4/api/v1/keys/bobsae/enc_keys
-
-🔍 Reading PKCS#12 file (client_alice.p12)...
-📂 Opening file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12
-✅ Successfully read 4494 bytes!
-
-🔍 Reading CA cert...
-📂 Opening file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem
-✅ Successfully read 2155 bytes!
-✅ Generated quantum auth proof
-📡 Sending request to: https://192.168.0.4/api/v1/keys/bobsae/enc_keys
-Request Body: KeyRequest { sae_id: "bobsae", key_size: 256, number_of_keys: 1 }
-[2m2025-02-23T17:58:09.546352Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m checkout waiting for idle connection: ("https", 192.168.0.4)
-[2m2025-02-23T17:58:09.546456Z[0m [35mTRACE[0m [2mhyper::client::connect::http[0m[2m:[0m Http::connect; scheme=Some("https"), host=Some("192.168.0.4"), port=None
-[2m2025-02-23T17:58:09.546492Z[0m [34mDEBUG[0m [2mhyper::client::connect::http[0m[2m:[0m connecting to 192.168.0.4:443
-[2m2025-02-23T17:58:09.546988Z[0m [34mDEBUG[0m [2mhyper::client::connect::http[0m[2m:[0m connected to 192.168.0.4:443
-[2m2025-02-23T17:58:09.561994Z[0m [35mTRACE[0m [2mhyper::client::conn[0m[2m:[0m client handshake Http1
-[2m2025-02-23T17:58:09.562044Z[0m [35mTRACE[0m [2mhyper::client::client[0m[2m:[0m handshake complete, spawning background dispatcher task
-[2m2025-02-23T17:58:09.562187Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Busy }
-[2m2025-02-23T17:58:09.562200Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m checkout dropped for ("https", 192.168.0.4)
-[2m2025-02-23T17:58:09.562377Z[0m [35mTRACE[0m [1mencode_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Client::encode method=POST, body=Some(Known(53))
-[2m2025-02-23T17:58:09.562461Z[0m [35mTRACE[0m [2mhyper::proto::h1::encode[0m[2m:[0m sized write, len = 53
-[2m2025-02-23T17:58:09.562478Z[0m [35mTRACE[0m [2mhyper::proto::h1::io[0m[2m:[0m buffer.flatten [3mself.len[0m[2m=[0m192 [3mbuf.len[0m[2m=[0m53
-[2m2025-02-23T17:58:09.562525Z[0m [34mDEBUG[0m [2mhyper::proto::h1::io[0m[2m:[0m flushed 245 bytes
-[2m2025-02-23T17:58:09.562537Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
-[2m2025-02-23T17:58:09.564946Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
-[2m2025-02-23T17:58:09.565029Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
-[2m2025-02-23T17:58:09.565503Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
-[2m2025-02-23T17:58:09.565568Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
-[2m2025-02-23T17:58:09.652093Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
-[2m2025-02-23T17:58:09.652143Z[0m [35mTRACE[0m [2mhyper::proto::h1::io[0m[2m:[0m received 261 bytes
-[2m2025-02-23T17:58:09.652188Z[0m [35mTRACE[0m [1mparse_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Response.parse [3mbytes[0m[2m=[0m261
-[2m2025-02-23T17:58:09.652227Z[0m [35mTRACE[0m [1mparse_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Response.parse Complete(148)
-[2m2025-02-23T17:58:09.652277Z[0m [34mDEBUG[0m [2mhyper::proto::h1::io[0m[2m:[0m parsed 5 headers
-[2m2025-02-23T17:58:09.652288Z[0m [34mDEBUG[0m [2mhyper::proto::h1::conn[0m[2m:[0m incoming body is content-length (113 bytes)
-[2m2025-02-23T17:58:09.652334Z[0m [35mTRACE[0m [2mhyper::proto::h1::decode[0m[2m:[0m decode; state=Length(113)
-[2m2025-02-23T17:58:09.652347Z[0m [34mDEBUG[0m [2mhyper::proto::h1::conn[0m[2m:[0m incoming body completed
-✅ Got response!
-[2m2025-02-23T17:58:09.652386Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m maybe_notify; read_from_io blocked
-Status: 200 OK
-Headers: {
-    "server": "nginx",
-    "date": "Sun, 23 Feb 2025 17:59:58 GMT",
-    "content-type": "application/json",
-    "content-length": "113",
-    "connection": "keep-alive",
-}
-[2m2025-02-23T17:58:09.652426Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
-[2m2025-02-23T17:58:09.652445Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
-[2m2025-02-23T17:58:09.652471Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m put; add idle connection for ("https", 192.168.0.4)
-[2m2025-02-23T17:58:09.652487Z[0m [34mDEBUG[0m [2mhyper::client::pool[0m[2m:[0m pooling idle connection for ("https", 192.168.0.4)
-Response body:
-{"keys":[{"key_ID":"db67c562-b13a-463c-87b8-938f8a1b6da1","key":"56HjUMiS0hw1znm3LcKxE9pzAdKAsL0sszI8Wg7deK8="}]}
-[2m2025-02-23T17:58:09.652563Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
-
-🎉 Success! Got keys:
-🔑 Key ID: db67c562-b13a-463c-87b8-938f8a1b6da1
-🗝️  Key: 56HjUMiS0hw1znm3LcKxE9pzAdKAsL0sszI8Wg7deK8=
-📝 Generating quantum-resistant proof...
+🌟 Starting Reporter Node...
+[2m2025-02-23T23:08:25.820290Z[0m [34mDEBUG[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m Loading PKCS#12 and CA certificates...
+[2m2025-02-23T23:08:25.820315Z[0m [34mDEBUG[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m 📂 Reading file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12
+[2m2025-02-23T23:08:25.820350Z[0m [34mDEBUG[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m ✅ Successfully read 4494 bytes
+[2m2025-02-23T23:08:25.820362Z[0m [34mDEBUG[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m 📂 Reading file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem
+[2m2025-02-23T23:08:25.820380Z[0m [34mDEBUG[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m ✅ Successfully read 2155 bytes
+[2m2025-02-23T23:08:25.861793Z[0m [34mDEBUG[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m Retrieving key from https://192.168.0.4/api/v1/keys/bobsae/enc_keys
+[2m2025-02-23T23:08:25.861814Z[0m [34mDEBUG[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m Sending request: KeyRequest { sae_id: "bobsae", key_size: 256, number_of_keys: 1 }
+[2m2025-02-23T23:08:25.862152Z[0m [34mDEBUG[0m [2mhyper::client::connect::http[0m[2m:[0m connecting to 192.168.0.4:443
+[2m2025-02-23T23:08:25.862607Z[0m [34mDEBUG[0m [2mhyper::client::connect::http[0m[2m:[0m connected to 192.168.0.4:443
+[2m2025-02-23T23:08:25.881840Z[0m [34mDEBUG[0m [2mhyper::proto::h1::io[0m[2m:[0m flushed 245 bytes
+[2m2025-02-23T23:08:25.970903Z[0m [34mDEBUG[0m [2mhyper::proto::h1::io[0m[2m:[0m parsed 5 headers
+[2m2025-02-23T23:08:25.970951Z[0m [34mDEBUG[0m [2mhyper::proto::h1::conn[0m[2m:[0m incoming body is content-length (113 bytes)
+[2m2025-02-23T23:08:25.971022Z[0m [34mDEBUG[0m [2mhyper::proto::h1::conn[0m[2m:[0m incoming body completed
+[2m2025-02-23T23:08:25.971162Z[0m [34mDEBUG[0m [2mhyper::client::pool[0m[2m:[0m pooling idle connection for ("https", 192.168.0.4)
+[2m2025-02-23T23:08:25.971244Z[0m [34mDEBUG[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m Response status: 200 OK
+[2m2025-02-23T23:08:25.971350Z[0m [32m INFO[0m [2mqkd_client::reporter::qkd_client[0m[2m:[0m Successfully retrieved key with ID: f5135471-9f32-4625-9b1b-aeef9bff58df
+[2m2025-02-23T23:08:25.971382Z[0m [34mDEBUG[0m [2mqkd_client::reporter[0m[2m:[0m Key retrieved in 109.594674ms
 Starting proof generation for key...
 Key bytes length: 32
 Verifying circuit files...
 Created input file at "/home/paraxiom/qkd_client/circuits/input.json"
 Generating witness...
-[2m2025-02-23T17:58:09.654458Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m idle interval checking for expired
 ✅ Generated witness successfully
 Generating proof...
 ✅ Generated proof successfully
 Reading proof and verification key...
 ✅ Read proof and verification key successfully
-✅ Generated quantum-resistant proof
+[2m2025-02-23T23:08:26.741616Z[0m [34mDEBUG[0m [2mqkd_client::reporter[0m[2m:[0m Proof generated in 770.202639ms
 Starting proof verification...
 Wrote verification files
 Verifying proof...
 ✅ Proof verified successfully
-✅ Proof verified successfully
+[2m2025-02-23T23:08:27.237648Z[0m [32m INFO[0m [2mqkd_client::reporter[0m[2m:[0m ✅ Proof verified successfully in 495.98206ms
+
+📊 Reporter Node Metrics:
+Key Retrieval Time: 109.594674ms
+Proof Generation Time: 770.202639ms
+Verification Time: 495.98206ms
 
 >>> MAIN.RS CODE
 ================================================
-use reqwest;
-use reqwest::Certificate;
-use serde::{Deserialize, Serialize};
-use std::error::Error;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-use std::time::Duration;
+// src/main.rs
+mod reporter;
 mod zk;
-use zk::KeyProof;
 mod quantum_auth;
-use quantum_auth::QuantumAuthenticator;
-use tracing;
+
+use reporter::ReporterNode;
 use tracing_subscriber::FmtSubscriber;
-use ark_ff::PrimeField;
-
-#[derive(Debug, Serialize)]
-struct KeyRequest {
-    sae_id: String,
-    key_size: u32,
-    number_of_keys: u32,
-}
-
-#[derive(Debug, Deserialize)]
-struct Key {
-    #[serde(rename = "key_ID")]
-    key_id: String,
-    key: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct KeyResponse {
-    keys: Vec<Key>,
-}
-
-fn read_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
-    println!("📂 Opening file: {}", path.display());
-    let mut file = File::open(path)?;
-    let mut contents = Vec::new();
-    file.read_to_end(&mut contents)?;
-    println!("✅ Successfully read {} bytes!", contents.len());
-    Ok(contents)
-}
-
-async fn try_connection(ip: &str, is_enc: bool) -> Result<(), Box<dyn Error>> {
-    let url = if is_enc {
-        format!("https://{}/api/v1/keys/bobsae/enc_keys", ip)
-    } else {
-        format!("https://{}/api/v1/keys/alicesae/dec_keys", ip)
-    };
-    println!("\n🔍 Trying connection to {}", url);
-
-    // PKCS#12 path + CA
-    let p12_path =
-        Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12");
-    let ca_path = Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem");
-
-    println!("\n🔍 Reading PKCS#12 file (client_alice.p12)...");
-    let pkcs12_bytes = read_file(p12_path)?;
-
-    println!("\n🔍 Reading CA cert...");
-    let ca_contents = read_file(ca_path)?;
-    let ca_cert = Certificate::from_pem(&ca_contents)?;
-
-    let mut quantum_auth = QuantumAuthenticator::new()?;
-    let auth_proof = quantum_auth.authenticate()?;
-    println!("✅ Generated quantum auth proof");
-
-    // Build client with certificates
-    let client = reqwest::Client::builder()
-        .add_root_certificate(ca_cert)
-        .identity(reqwest::Identity::from_pkcs12_der(
-            &pkcs12_bytes,
-            "MySecret",
-        )?)
-        .danger_accept_invalid_certs(true)
-        .danger_accept_invalid_hostnames(true)
-        .timeout(Duration::from_secs(5))
-        .build()?;
-
-    let request = KeyRequest {
-        sae_id: "bobsae".to_string(),
-        key_size: 256,
-        number_of_keys: 1,
-    };
-
-    println!("📡 Sending request to: {}", url);
-    println!("Request Body: {:?}", request);
-
-    let response = client
-        .post(&url)
-        .json(&request)
-        .header("X-Quantum-Auth", base64::encode(&auth_proof))
-        .send()
-        .await?;
-
-    println!("✅ Got response!");
-    let status = response.status();
-    let headers = response.headers().clone();
-    println!("Status: {}", status);
-    println!("Headers: {:#?}", headers);
-
-    let raw_text = response.text().await?;
-    println!("Response body:\n{}", raw_text);
-
-    if status.is_success() {
-        match serde_json::from_str::<KeyResponse>(&raw_text) {
-            Ok(key_response) => {
-                println!("\n🎉 Success! Got keys:");
-                for key in key_response.keys {
-                    println!("🔑 Key ID: {}", key.key_id);
-                    println!("🗝️  Key: {}", key.key);
-
-                    // Generate quantum-resistant proof
-                    println!("📝 Generating quantum-resistant proof...");
-                    // In your key processing code
-                    match KeyProof::new(&key.key).await {
-                        Ok(key_proof) => {
-                            println!("✅ Generated quantum-resistant proof");
-                            match key_proof.verify() {
-                                Ok(true) => println!("✅ Proof verified successfully"),
-                                Ok(false) => println!("❌ Proof verification failed"),
-                                Err(e) => println!("❌ Error verifying proof: {}", e),
-                            }
-                        }
-                        Err(e) => println!("❌ Error generating proof: {}", e),
-                    }
-                }
-            }
-            Err(e) => {
-                println!("❌ Error parsing response JSON: {}", e);
-            }
-        }
-    }
-
-    Ok(())
-}
 
 #[tokio::main]
 async fn main() {
+    // Setup logging
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(tracing::Level::TRACE)
+        .with_max_level(tracing::Level::DEBUG)
         .finish();
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-    println!("🌟 Testing connection...\n");
-    let ip = "192.168.0.4";
-    println!("\n🔄 Testing IP: {}", ip);
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("setting default subscriber failed");
 
-    if let Err(e) = try_connection(ip, true).await {
-        println!("❌ Connection failed!");
-        println!("Error: {}", e);
-        if let Some(source) = e.source() {
-            println!("Caused by: {}", source);
+    println!("🌟 Starting Reporter Node...");
+
+    // Create and run reporter node
+    match ReporterNode::new() {
+        Ok(reporter) => {
+            match reporter.report().await {
+                Ok(metrics) => {
+                    println!("\n📊 Reporter Node Metrics:");
+                    println!("Key Retrieval Time: {:?}", metrics.key_retrieval_time);
+                    println!("Proof Generation Time: {:?}", metrics.proof_generation_time);
+                    println!("Verification Time: {:?}", metrics.verification_time);
+                }
+                Err(e) => println!("❌ Reporting failed: {}", e),
+            }
         }
+        Err(e) => println!("❌ Failed to create Reporter Node: {}", e),
     }
 }
