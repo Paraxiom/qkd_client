@@ -1,0 +1,551 @@
+=== COMBINED LOGS AND CODE ===
+>>> RUNTIME LOGS
+================================================
+Sat Feb 22 01:13:50 PM EST 2025
+================================================
+warning: unused import: `ark_bn254::Fr`
+ --> src/quantum_auth/commitment.rs:1:5
+  |
+1 | use ark_bn254::Fr;
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `commitment::QuantumCommitment`
+ --> src/quantum_auth/mod.rs:5:5
+  |
+5 | use commitment::QuantumCommitment;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+  --> src/quantum_auth/commitment.rs:13:13
+   |
+13 |         let mut value = [0u8; 32];
+   |             ----^^^^^
+   |             |
+   |             help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: `qkd_client` (lib) generated 3 warnings (run `cargo fix --lib -p qkd_client` to apply 3 suggestions)
+warning: variable does not need to be mutable
+  --> src/main.rs:65:9
+   |
+65 |     let mut quantum_auth = QuantumAuthenticator::new()?;
+   |         ----^^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: unused import: `ark_ff::PrimeField`
+  --> src/main.rs:15:5
+   |
+15 | use ark_ff::PrimeField;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+  --> src/quantum_auth/commitment.rs:13:13
+   |
+13 |         let mut value = [0u8; 32];
+   |             ----^^^^^
+   |             |
+   |             help: remove this `mut`
+
+warning: function `build_test_circuit` is never used
+ --> src/zk/circuit.rs:6:14
+  |
+6 | pub async fn build_test_circuit() -> Result<CircomCircuit<Fr>, Box<dyn Error>> {
+  |              ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: `qkd_client` (bin "qkd_client") generated 6 warnings (2 duplicates) (run `cargo fix --bin "qkd_client"` to apply 2 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.24s
+     Running `target/debug/qkd_client`
+🌟 Testing connection...
+
+
+🔄 Testing IP: 192.168.0.4
+
+🔍 Trying connection to https://192.168.0.4/api/v1/keys/bobsae/enc_keys
+
+🔍 Reading PKCS#12 file (client_alice.p12)...
+📂 Opening file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12
+✅ Successfully read 4494 bytes!
+
+🔍 Reading CA cert...
+📂 Opening file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem
+✅ Successfully read 2155 bytes!
+✅ Generated quantum auth proof
+📡 Sending request to: https://192.168.0.4/api/v1/keys/bobsae/enc_keys
+Request Body: KeyRequest { sae_id: "bobsae", key_size: 256, number_of_keys: 1 }
+[2m2025-02-22T18:13:50.526206Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m checkout waiting for idle connection: ("https", 192.168.0.4)
+[2m2025-02-22T18:13:50.526288Z[0m [35mTRACE[0m [2mhyper::client::connect::http[0m[2m:[0m Http::connect; scheme=Some("https"), host=Some("192.168.0.4"), port=None
+[2m2025-02-22T18:13:50.526318Z[0m [34mDEBUG[0m [2mhyper::client::connect::http[0m[2m:[0m connecting to 192.168.0.4:443
+[2m2025-02-22T18:13:50.526808Z[0m [34mDEBUG[0m [2mhyper::client::connect::http[0m[2m:[0m connected to 192.168.0.4:443
+[2m2025-02-22T18:13:50.540831Z[0m [35mTRACE[0m [2mhyper::client::conn[0m[2m:[0m client handshake Http1
+[2m2025-02-22T18:13:50.540875Z[0m [35mTRACE[0m [2mhyper::client::client[0m[2m:[0m handshake complete, spawning background dispatcher task
+[2m2025-02-22T18:13:50.541028Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Busy }
+[2m2025-02-22T18:13:50.541046Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m checkout dropped for ("https", 192.168.0.4)
+[2m2025-02-22T18:13:50.541256Z[0m [35mTRACE[0m [1mencode_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Client::encode method=POST, body=Some(Known(53))
+[2m2025-02-22T18:13:50.541329Z[0m [35mTRACE[0m [2mhyper::proto::h1::encode[0m[2m:[0m sized write, len = 53
+[2m2025-02-22T18:13:50.541344Z[0m [35mTRACE[0m [2mhyper::proto::h1::io[0m[2m:[0m buffer.flatten [3mself.len[0m[2m=[0m192 [3mbuf.len[0m[2m=[0m53
+[2m2025-02-22T18:13:50.541432Z[0m [34mDEBUG[0m [2mhyper::proto::h1::io[0m[2m:[0m flushed 245 bytes
+[2m2025-02-22T18:13:50.541451Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
+[2m2025-02-22T18:13:50.543516Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
+[2m2025-02-22T18:13:50.543606Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
+[2m2025-02-22T18:13:50.544052Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
+[2m2025-02-22T18:13:50.544179Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
+[2m2025-02-22T18:13:50.621655Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
+[2m2025-02-22T18:13:50.621742Z[0m [35mTRACE[0m [2mhyper::proto::h1::io[0m[2m:[0m received 261 bytes
+[2m2025-02-22T18:13:50.621844Z[0m [35mTRACE[0m [1mparse_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Response.parse [3mbytes[0m[2m=[0m261
+[2m2025-02-22T18:13:50.621930Z[0m [35mTRACE[0m [1mparse_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Response.parse Complete(148)
+[2m2025-02-22T18:13:50.622017Z[0m [34mDEBUG[0m [2mhyper::proto::h1::io[0m[2m:[0m parsed 5 headers
+[2m2025-02-22T18:13:50.622036Z[0m [34mDEBUG[0m [2mhyper::proto::h1::conn[0m[2m:[0m incoming body is content-length (113 bytes)
+[2m2025-02-22T18:13:50.622090Z[0m [35mTRACE[0m [2mhyper::proto::h1::decode[0m[2m:[0m decode; state=Length(113)
+[2m2025-02-22T18:13:50.622110Z[0m [34mDEBUG[0m [2mhyper::proto::h1::conn[0m[2m:[0m incoming body completed
+[2m2025-02-22T18:13:50.622155Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m maybe_notify; read_from_io blocked
+[2m2025-02-22T18:13:50.622200Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
+[2m2025-02-22T18:13:50.622225Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
+[2m2025-02-22T18:13:50.622316Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m put; add idle connection for ("https", 192.168.0.4)
+[2m2025-02-22T18:13:50.622348Z[0m [34mDEBUG[0m [2mhyper::client::pool[0m[2m:[0m pooling idle connection for ("https", 192.168.0.4)
+✅ Got response!
+Status: 200 OK
+Headers: {
+    "server": "nginx",
+    "date": "Sat, 22 Feb 2025 18:15:39 GMT",
+    "content-type": "application/json",
+    "content-length": "113",
+    "connection": "keep-alive",
+}
+Response body:
+{"keys":[{"key_ID":"a2e1a7b4-7061-4a82-a7db-f700d6d6b487","key":"d73n4dq3BE/UnRin8clqMxlPv+d74+H7wbSRSK3eYXo="}]}
+
+🎉 Success! Got keys:
+🔑 Key ID: a2e1a7b4-7061-4a82-a7db-f700d6d6b487
+🗝️  Key: d73n4dq3BE/UnRin8clqMxlPv+d74+H7wbSRSK3eYXo=
+📝 Generating quantum-resistant proof...
+📝 Processing QKD key...
+📊 Decoded key length: 32 bytes
+   Raw byte 0: 119
+   Raw byte 1: 189
+   Raw byte 2: 231
+   Raw byte 3: 225
+   Raw byte 4: 218
+   Raw byte 5: 183
+   Raw byte 6: 4
+   Raw byte 7: 79
+   Raw byte 8: 212
+   Raw byte 9: 157
+   Raw byte 10: 24
+   Raw byte 11: 167
+   Raw byte 12: 241
+   Raw byte 13: 201
+   Raw byte 14: 106
+   Raw byte 15: 51
+   Raw byte 16: 25
+   Raw byte 17: 79
+   Raw byte 18: 191
+   Raw byte 19: 231
+   Raw byte 20: 123
+   Raw byte 21: 227
+   Raw byte 22: 225
+   Raw byte 23: 251
+   Raw byte 24: 193
+   Raw byte 25: 180
+   Raw byte 26: 145
+   Raw byte 27: 72
+   Raw byte 28: 173
+   Raw byte 29: 222
+   Raw byte 30: 97
+   Raw byte 31: 122
+   Computed hash: 4963
+[2m2025-02-22T18:13:50.624465Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m idle interval checking for expired
+[2m2025-02-22T18:13:50.624506Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
+[2m2025-02-22T18:13:50.626521Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(42 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.626523Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(43 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.627995Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(30 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.628385Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(431 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.628741Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(51 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.630065Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(30 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.630792Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(71 bytes, u0:0(i64 vmctx, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.632264Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(125 bytes, u0:0(i64 vmctx, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.634330Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(125 bytes, u0:0(i64 vmctx, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.634603Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(112 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.636419Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(212 bytes, u0:0(i64 vmctx, i32, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.636812Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(112 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.638889Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(268 bytes, u0:0(i64 vmctx, i32, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.638977Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(103 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.640882Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(18 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.641596Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(76 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.641756Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(2029 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.643281Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(19 bytes, u0:0(i64 vmctx, i64, i64) -> i64 system_v)
+[2m2025-02-22T18:13:50.644048Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(19 bytes, u0:0(i64 vmctx, i64, i64) -> i64 system_v)
+[2m2025-02-22T18:13:50.644805Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(24 bytes, u0:0(i64 vmctx, i32, i32) -> i64 system_v)
+[2m2025-02-22T18:13:50.645687Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(109 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.648134Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(106 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.650653Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(52 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.651833Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(263 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.656022Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(149 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.658827Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(80 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.660925Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(80 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.661481Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(2294 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.663016Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(66 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.664216Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(515 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.671792Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(66 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.672987Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(515 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.678959Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(10 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.679518Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(182 bytes, u0:0(i64 vmctx, i32, i64, i32) system_v)
+[2m2025-02-22T18:13:50.680495Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(66 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.681509Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(78 bytes, u0:0(i64 vmctx, i32, i64) system_v)
+[2m2025-02-22T18:13:50.681690Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(515 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.682806Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(296 bytes, u0:0(i64 vmctx, i32, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.688343Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(289 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.689143Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(54 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.690180Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(69 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.691747Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(29 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.692838Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(44 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.692995Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(29 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.694070Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(23 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.694242Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(24 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.694968Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(11 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.695279Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(20 bytes, u0:0(i64 vmctx, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.695561Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(2200 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.696064Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(4 bytes, u0:0(i64 vmctx) -> i32 system_v)
+[2m2025-02-22T18:13:50.696519Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(4 bytes, u0:0(i64 vmctx) -> i32 system_v)
+[2m2025-02-22T18:13:50.696967Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(4 bytes, u0:0(i64 vmctx) -> i32 system_v)
+[2m2025-02-22T18:13:50.697431Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(5 bytes, u0:0(i64 vmctx) -> i32 system_v)
+[2m2025-02-22T18:13:50.697875Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(14 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.698575Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(16 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.699224Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(67 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.701027Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(62 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.702259Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(86 bytes, u0:0(i64 vmctx, i64) -> i32 system_v)
+[2m2025-02-22T18:13:50.703775Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(11 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.704425Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(198 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.708355Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(17 bytes, u0:0(i64 vmctx, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.709265Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(10 bytes, u0:0(i64 vmctx) system_v)
+[2m2025-02-22T18:13:50.709786Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(4 bytes, u0:0(i64 vmctx) -> i32 system_v)
+[2m2025-02-22T18:13:50.710232Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(4 bytes, u0:0(i64 vmctx) -> i32 system_v)
+[2m2025-02-22T18:13:50.710688Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(4 bytes, u0:0(i64 vmctx) -> i32 system_v)
+[2m2025-02-22T18:13:50.711131Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(37 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.712090Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(42 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.712834Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(14 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.713490Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(48 bytes, u0:0(i64 vmctx) -> i32 system_v)
+[2m2025-02-22T18:13:50.714399Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(286 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.714952Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(3962 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.718359Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(100 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.720109Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(46 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.720978Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(273 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.724637Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(23 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.725375Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(9 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.725919Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(197 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.729427Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(28 bytes, u0:0(i64 vmctx, i32, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.730259Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(293 bytes, u0:0(i64 vmctx, i32, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.735149Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(218 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.738719Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(32 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.739724Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(52 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.740671Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(61 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.741918Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(31 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.742981Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(80 bytes, u0:0(i64 vmctx, i32, i64) system_v)
+[2m2025-02-22T18:13:50.744434Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(87 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.745960Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(49 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.747109Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(73 bytes, u0:0(i64 vmctx, i32) system_v)
+[2m2025-02-22T18:13:50.748487Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(37 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.749655Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(129 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.751861Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(33 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.752783Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(31 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.753842Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(428 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.759814Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(428 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.765788Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(393 bytes, u0:0(i64 vmctx, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.768052Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(4227 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.771862Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(287 bytes, u0:0(i64 vmctx, i32, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.776644Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(26 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.777751Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(26 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.778842Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(43 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.780266Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(43 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.781689Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(43 bytes, u0:0(i64 vmctx, i32, i32, i32) system_v)
+[2m2025-02-22T18:13:50.813630Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(10 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.814197Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(11 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.814764Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(21 bytes, u0:0(i64 vmctx, i32, i32) system_v)
+[2m2025-02-22T18:13:50.815505Z[0m [35mTRACE[0m [2mwasmer_compiler_cranelift::translator::func_translator[0m[2m:[0m translate(18 bytes, u0:0(i64 vmctx, i32) -> i32 system_v)
+[2m2025-02-22T18:13:50.824358Z[0m [34mDEBUG[0m [2mwasmer_wasix::fs[0m[2m:[0m Initializing WASI filesystem
+[2m2025-02-22T18:13:50.824868Z[0m [35mTRACE[0m [2mwasmer_wasix::state::func_env[0m[2m:[0m initializing with layout WasiMemoryLayout { stack_upper: 0, stack_lower: 0, guard_size: 0, stack_size: 0 }
+Constraint trace requires enabling `ConstraintLayer`
+Constraint trace requires enabling `ConstraintLayer`
+Unsatisfied constraint: Some("0")
+thread 'main' panicked at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ark-circom-0.5.0/src/circom/builder.rs:101:9:
+assertion failed: {
+    use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
+    let cs = ConstraintSystem::<F>::new_ref();
+    circom.clone().generate_constraints(cs.clone()).unwrap();
+    let is_satisfied = cs.is_satisfied().unwrap();
+    if !is_satisfied {
+            println!("Unsatisfied constraint: {:?}",
+            cs.which_is_unsatisfied().unwrap());
+        }
+    is_satisfied
+}
+stack backtrace:
+   0:     0x5cc79255dcba - std::backtrace_rs::backtrace::libunwind::trace::h886f3b0575353f6e
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/../../backtrace/src/backtrace/libunwind.rs:116:5
+   1:     0x5cc79255dcba - std::backtrace_rs::backtrace::trace_unsynchronized::h652d1041ec67eb09
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/../../backtrace/src/backtrace/mod.rs:66:5
+   2:     0x5cc79255dcba - std::sys::backtrace::_print_fmt::hd0317245a04c3039
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/sys/backtrace.rs:66:9
+   3:     0x5cc79255dcba - <std::sys::backtrace::BacktraceLock::print::DisplayBacktrace as core::fmt::Display>::fmt::h14b23c1989cbd5c2
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/sys/backtrace.rs:39:26
+   4:     0x5cc7925873b3 - core::fmt::rt::Argument::fmt::h43c1e387827e30dc
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/core/src/fmt/rt.rs:177:76
+   5:     0x5cc7925873b3 - core::fmt::write::h346b5eee5ed4d7cc
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/core/src/fmt/mod.rs:1189:21
+   6:     0x5cc7925595c3 - std::io::Write::write_fmt::heeb48dcd4a60b46b
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/io/mod.rs:1884:15
+   7:     0x5cc79255db02 - std::sys::backtrace::BacktraceLock::print::h48db11f3fd4983ff
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/sys/backtrace.rs:42:9
+   8:     0x5cc79255ec0c - std::panicking::default_hook::{{closure}}::h65db976b9c0d8674
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:268:22
+   9:     0x5cc79255ea52 - std::panicking::default_hook::h6eb3a1192db1ae36
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:295:9
+  10:     0x5cc79255f1e7 - std::panicking::rust_panic_with_hook::h370ee1901241e459
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:801:13
+  11:     0x5cc79255f046 - std::panicking::begin_panic_handler::{{closure}}::heabfe92676d6d073
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:667:13
+  12:     0x5cc79255e199 - std::sys::backtrace::__rust_end_short_backtrace::h6e22d229d4fdf49e
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/sys/backtrace.rs:170:18
+  13:     0x5cc79255ed0c - rust_begin_unwind
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:665:5
+  14:     0x5cc78fb20080 - core::panicking::panic_fmt::hfae270fab21da3e6
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/core/src/panicking.rs:76:14
+  15:     0x5cc78fb2010c - core::panicking::panic::h5a760ca58d73b582
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/core/src/panicking.rs:148:5
+  16:     0x5cc78fc1430b - ark_circom::circom::builder::CircomBuilder<F>::build::hdf8d6a99ac88d2d2
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ark-circom-0.5.0/src/circom/builder.rs:101:9
+  17:     0x5cc78fce1a18 - qkd_client::zk::proof::KeyProof::new::{{closure}}::hda69f39a81b47198
+                               at /home/paraxiom/qkd_client/src/zk/proof.rs:53:23
+  18:     0x5cc78fbca5d9 - qkd_client::try_connection::{{closure}}::h152cfd63751ca1fd
+                               at /home/paraxiom/qkd_client/src/main.rs:117:51
+  19:     0x5cc78fbcccfa - qkd_client::main::{{closure}}::hff343247b56d04c3
+                               at /home/paraxiom/qkd_client/src/main.rs:149:46
+  20:     0x5cc78fb2dced - <core::pin::Pin<P> as core::future::future::Future>::poll::hc18be78b77aeb9bf
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/core/src/future/future.rs:124:9
+  21:     0x5cc78fbd1a4f - tokio::runtime::park::CachedParkThread::block_on::{{closure}}::hb9a41479daff0d34
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/park.rs:284:63
+  22:     0x5cc78fbd13f6 - tokio::runtime::coop::with_budget::hbd81723f50288022
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/coop.rs:107:5
+  23:     0x5cc78fbd13f6 - tokio::runtime::coop::budget::h67f6be58c06a9e3d
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/coop.rs:73:5
+  24:     0x5cc78fbd13f6 - tokio::runtime::park::CachedParkThread::block_on::h79f0a4e4bca75c7e
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/park.rs:284:31
+  25:     0x5cc78fbc6670 - tokio::runtime::context::blocking::BlockingRegionGuard::block_on::h9a8e7f386ea75733
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/context/blocking.rs:66:9
+  26:     0x5cc78fd076de - tokio::runtime::scheduler::multi_thread::MultiThread::block_on::{{closure}}::h5838285111f69e22
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/scheduler/multi_thread/mod.rs:87:13
+  27:     0x5cc78fca5860 - tokio::runtime::context::runtime::enter_runtime::h61938a9dcc1cb20e
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/context/runtime.rs:65:16
+  28:     0x5cc78fd07651 - tokio::runtime::scheduler::multi_thread::MultiThread::block_on::ha247aeacfd00d54c
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/scheduler/multi_thread/mod.rs:86:9
+  29:     0x5cc78fbd717e - tokio::runtime::runtime::Runtime::block_on_inner::h2a41c355a7107ee2
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/runtime.rs:370:45
+  30:     0x5cc78fbd742e - tokio::runtime::runtime::Runtime::block_on::hf80deaa54e362dbb
+                               at /home/paraxiom/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.43.0/src/runtime/runtime.rs:340:13
+  31:     0x5cc78fd129f0 - qkd_client::main::h33f2c5f7c2305e21
+                               at /home/paraxiom/qkd_client/src/main.rs:149:5
+  32:     0x5cc78fb542eb - core::ops::function::FnOnce::call_once::hff7e8543bbb263ef
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/core/src/ops/function.rs:250:5
+  33:     0x5cc78fcd1f6e - std::sys::backtrace::__rust_begin_short_backtrace::h53b0203771b96a11
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/sys/backtrace.rs:154:18
+  34:     0x5cc78fb2e1f1 - std::rt::lang_start::{{closure}}::hc3025574cf4db19b
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/rt.rs:195:18
+  35:     0x5cc792550d77 - core::ops::function::impls::<impl core::ops::function::FnOnce<A> for &F>::call_once::h35f8c1e62d62acc8
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/core/src/ops/function.rs:284:13
+  36:     0x5cc792550d77 - std::panicking::try::do_call::hf68c0838c361652d
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:557:40
+  37:     0x5cc792550d77 - std::panicking::try::hd0db3bdfbc72102d
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:520:19
+  38:     0x5cc792550d77 - std::panic::catch_unwind::hc4de95e5d3f6ff5a
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panic.rs:358:14
+  39:     0x5cc792550d77 - std::rt::lang_start_internal::{{closure}}::hd93f66b74e68451d
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/rt.rs:174:48
+  40:     0x5cc792550d77 - std::panicking::try::do_call::h1cab56842903f0d9
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:557:40
+  41:     0x5cc792550d77 - std::panicking::try::h745f929dec89d652
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panicking.rs:520:19
+  42:     0x5cc792550d77 - std::panic::catch_unwind::hc9411728c13048ef
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/panic.rs:358:14
+  43:     0x5cc792550d77 - std::rt::lang_start_internal::h712a1d4742291d0c
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/rt.rs:174:20
+  44:     0x5cc78fb2e1ca - std::rt::lang_start::hc8bb0d0d1dad79e9
+                               at /rustc/e71f9a9a98b0faf423844bf0ba7438f29dc27d58/library/std/src/rt.rs:194:17
+  45:     0x5cc78fd12a9e - main
+  46:     0x718a2402a1ca - __libc_start_call_main
+                               at ./csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+  47:     0x718a2402a28b - __libc_start_main_impl
+                               at ./csu/../csu/libc-start.c:360:3
+  48:     0x5cc78fb20a45 - _start
+  49:                0x0 - <unknown>
+[2m2025-02-22T18:13:50.959981Z[0m [34mDEBUG[0m [2mvirtual_mio::selector[0m[2m:[0m orphaned event [3mtoken[0m[2m=[0m0
+[2m2025-02-22T18:13:50.960419Z[0m [35mTRACE[0m [2mhyper::proto::h1::dispatch[0m[2m:[0m client tx closed
+[2m2025-02-22T18:13:50.960444Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m State::close_read()
+[2m2025-02-22T18:13:50.960453Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m State::close_write()
+[2m2025-02-22T18:13:50.960465Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Closed, writing: Closed, keep_alive: Disabled }
+[2m2025-02-22T18:13:50.960531Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m shut down IO complete
+
+>>> MAIN.RS CODE
+================================================
+use reqwest;
+use reqwest::Certificate;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+use std::time::Duration;
+mod zk;
+use zk::KeyProof;
+mod quantum_auth;
+use quantum_auth::QuantumAuthenticator;
+use tracing;
+use tracing_subscriber::FmtSubscriber;
+use ark_ff::PrimeField;
+
+#[derive(Debug, Serialize)]
+struct KeyRequest {
+    sae_id: String,
+    key_size: u32,
+    number_of_keys: u32,
+}
+
+#[derive(Debug, Deserialize)]
+struct Key {
+    #[serde(rename = "key_ID")]
+    key_id: String,
+    key: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct KeyResponse {
+    keys: Vec<Key>,
+}
+
+fn read_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
+    println!("📂 Opening file: {}", path.display());
+    let mut file = File::open(path)?;
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents)?;
+    println!("✅ Successfully read {} bytes!", contents.len());
+    Ok(contents)
+}
+
+async fn try_connection(ip: &str, is_enc: bool) -> Result<(), Box<dyn Error>> {
+    let url = if is_enc {
+        format!("https://{}/api/v1/keys/bobsae/enc_keys", ip)
+    } else {
+        format!("https://{}/api/v1/keys/alicesae/dec_keys", ip)
+    };
+    println!("\n🔍 Trying connection to {}", url);
+
+    // PKCS#12 path + CA
+    let p12_path =
+        Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12");
+    let ca_path = Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem");
+
+    println!("\n🔍 Reading PKCS#12 file (client_alice.p12)...");
+    let pkcs12_bytes = read_file(p12_path)?;
+
+    println!("\n🔍 Reading CA cert...");
+    let ca_contents = read_file(ca_path)?;
+    let ca_cert = Certificate::from_pem(&ca_contents)?;
+
+    let mut quantum_auth = QuantumAuthenticator::new()?;
+    let auth_proof = quantum_auth.authenticate()?;
+    println!("✅ Generated quantum auth proof");
+
+    // Build client with certificates
+    let client = reqwest::Client::builder()
+        .add_root_certificate(ca_cert)
+        .identity(reqwest::Identity::from_pkcs12_der(
+            &pkcs12_bytes,
+            "MySecret",
+        )?)
+        .danger_accept_invalid_certs(true)
+        .danger_accept_invalid_hostnames(true)
+        .timeout(Duration::from_secs(5))
+        .build()?;
+
+    let request = KeyRequest {
+        sae_id: "bobsae".to_string(),
+        key_size: 256,
+        number_of_keys: 1,
+    };
+
+    println!("📡 Sending request to: {}", url);
+    println!("Request Body: {:?}", request);
+
+    let response = client
+        .post(&url)
+        .json(&request)
+        .header("X-Quantum-Auth", base64::encode(&auth_proof))
+        .send()
+        .await?;
+
+    println!("✅ Got response!");
+    let status = response.status();
+    let headers = response.headers().clone();
+    println!("Status: {}", status);
+    println!("Headers: {:#?}", headers);
+
+    let raw_text = response.text().await?;
+    println!("Response body:\n{}", raw_text);
+
+    if status.is_success() {
+        match serde_json::from_str::<KeyResponse>(&raw_text) {
+            Ok(key_response) => {
+                println!("\n🎉 Success! Got keys:");
+                for key in key_response.keys {
+                    println!("🔑 Key ID: {}", key.key_id);
+                    println!("🗝️  Key: {}", key.key);
+
+                    // Generate quantum-resistant proof
+                    println!("📝 Generating quantum-resistant proof...");
+                    // In your key processing code
+                    match KeyProof::new(&key.key).await {
+                        Ok(key_proof) => {
+                            println!("✅ Generated quantum-resistant proof");
+                            match key_proof.verify() {
+                                Ok(true) => println!("✅ Proof verified successfully"),
+                                Ok(false) => println!("❌ Proof verification failed"),
+                                Err(e) => println!("❌ Error verifying proof: {}", e),
+                            }
+                        }
+                        Err(e) => println!("❌ Error generating proof: {}", e),
+                    }
+                }
+            }
+            Err(e) => {
+                println!("❌ Error parsing response JSON: {}", e);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(tracing::Level::TRACE)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+    println!("🌟 Testing connection...\n");
+    let ip = "192.168.0.4";
+    println!("\n🔄 Testing IP: {}", ip);
+
+    if let Err(e) = try_connection(ip, true).await {
+        println!("❌ Connection failed!");
+        println!("Error: {}", e);
+        if let Some(source) = e.source() {
+            println!("Caused by: {}", source);
+        }
+    }
+}
