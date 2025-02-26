@@ -1,5 +1,4 @@
 // src/quantum_auth/circuit.rs
-use ark_bn254::Bn254;
 use std::error::Error;
 
 pub struct ProvingKey;

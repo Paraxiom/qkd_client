@@ -1,4 +1,3 @@
-use ark_bn254::Fr;
 use rand::RngCore;
 use std::error::Error;
 #[allow(dead_code)]
@@ -10,7 +9,7 @@ pub struct QuantumCommitment {
 impl QuantumCommitment {
     #[allow(dead_code)]
     pub fn new() -> Result<Self, Box<dyn Error>> {
-        let mut value = [0u8; 32];
+        let value = [0u8; 32];
         let mut nonce = [0u8; 32];
 
         // Generate random nonce

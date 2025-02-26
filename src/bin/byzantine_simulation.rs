@@ -1,8 +1,8 @@
 // src/bin/byzantine_simulation.rs
+use rand::Rng;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use rand::Rng;
 
 // Simple reporter node that simulates quantum key retrieval
 struct SimpleReporter {
@@ -12,7 +12,7 @@ struct SimpleReporter {
 
 impl SimpleReporter {
     fn new(id: &str, success_rate: f64) -> Self {
-        Self { 
+        Self {
             id: id.to_string(),
             success_rate,
         }
@@ -20,8 +20,10 @@ impl SimpleReporter {
 
     fn retrieve_key(&self) -> Result<Vec<u8>, String> {
         // Simulate network delay
-        thread::sleep(Duration::from_millis(100 + rand::thread_rng().gen_range(0..500)));
-        
+        thread::sleep(Duration::from_millis(
+            100 + rand::thread_rng().gen_range(0..500),
+        ));
+
         // Simulate success based on success_rate
         if rand::thread_rng().gen_bool(self.success_rate) {
             // Generate random "quantum" key
@@ -44,27 +46,33 @@ struct ByzantineSystem {
 impl ByzantineSystem {
     fn new(reporter_count: usize, threshold: usize) -> Self {
         let mut reporters = Vec::new();
-        
+
         for i in 0..reporter_count {
             // Some reporters are more reliable than others
             let success_rate = if i % 5 == 0 { 0.3 } else { 0.8 };
-            reporters.push(SimpleReporter::new(&format!("reporter-{}", i), success_rate));
+            reporters.push(SimpleReporter::new(
+                &format!("reporter-{}", i),
+                success_rate,
+            ));
         }
-        
-        Self { reporters, threshold }
+
+        Self {
+            reporters,
+            threshold,
+        }
     }
-    
+
     fn run(&self) -> bool {
         // Track successful retrievals
         let successful_reports = Arc::new(Mutex::new(0));
-        
+
         // Run all reporters
         let mut handles = Vec::new();
-        
+
         for reporter in &self.reporters {
             let reporter_id = reporter.id.clone();
             let success_counter = Arc::clone(&successful_reports);
-            
+
             // Create a thread for each reporter
             let handle = thread::spawn(move || {
                 let reporter = SimpleReporter::new(&reporter_id, 0.8);
@@ -73,35 +81,41 @@ impl ByzantineSystem {
                     *count += 1;
                 }
             });
-            
+
             handles.push(handle);
         }
-        
+
         // Wait for all reporters to finish
         for handle in handles {
             handle.join().unwrap();
         }
-        
+
         // Check if we have enough successful reports for consensus
         let final_count = *successful_reports.lock().unwrap();
-        println!("Successful reports: {}/{} (needed {})", 
-                 final_count, self.reporters.len(), self.threshold);
-        
+        println!(
+            "Successful reports: {}/{} (needed {})",
+            final_count,
+            self.reporters.len(),
+            self.threshold
+        );
+
         final_count >= self.threshold
     }
 }
 
 fn main() {
     println!("🌟 Starting Byzantine Simulation...");
-    
+
     // Create a system with 7 reporters, requiring 5 for consensus (can tolerate 2 failures)
     let reporter_count = 7;
     let threshold = (reporter_count / 2) + 1;
     let system = ByzantineSystem::new(reporter_count, threshold);
-    
-    println!("Running with {} reporters, requiring {} for consensus", 
-             reporter_count, threshold);
-    
+
+    println!(
+        "Running with {} reporters, requiring {} for consensus",
+        reporter_count, threshold
+    );
+
     // Run the system
     if system.run() {
         println!("✅ Byzantine consensus reached!");

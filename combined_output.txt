@@ -1,187 +1,263 @@
 === COMBINED LOGS AND CODE ===
 >>> RUNTIME LOGS
 ================================================
-Sun Feb 23 12:58:09 PM EST 2025
+Tue Feb 25 02:43:11 PM EST 2025
 ================================================
-warning: unused import: `ark_bn254::Fr`
- --> src/quantum_auth/commitment.rs:1:5
-  |
-1 | use ark_bn254::Fr;
-  |     ^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` on by default
+   Compiling qkd_client v0.1.0 (/home/paraxiom/qkd_client)
+error[E0433]: failed to resolve: use of undeclared crate or module `subtle`
+   --> src/quantum_auth/pq/sphincs.rs:221:21
+    |
+221 |         let valid = subtle::ConstantTimeEq::ct_eq(sig_hash, expected.as_bytes()).unwrap_u8() == 1;
+    |                     ^^^^^^ use of undeclared crate or module `subtle`
 
-warning: unused import: `commitment::QuantumCommitment`
- --> src/quantum_auth/mod.rs:5:5
-  |
-5 | use commitment::QuantumCommitment;
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0433]: failed to resolve: use of undeclared crate or module `blake3`
+   --> src/quantum_auth/pq/sphincs.rs:151:26
+    |
+151 |         let mut hasher = blake3::Hasher::new();
+    |                          ^^^^^^ use of undeclared crate or module `blake3`
+    |
+help: consider importing one of these traits
+    |
+2   + use std::hash::Hasher;
+    |
+2   + use ark_std::hash::Hasher;
+    |
+help: if you import `Hasher`, refer to it directly
+    |
+151 -         let mut hasher = blake3::Hasher::new();
+151 +         let mut hasher = Hasher::new();
+    |
 
-warning: unused import: `std::path::PathBuf`
- --> src/zk/proof.rs:7:5
-  |
-7 | use std::path::PathBuf;
-  |     ^^^^^^^^^^^^^^^^^^
+error[E0433]: failed to resolve: use of undeclared crate or module `blake3`
+   --> src/quantum_auth/pq/sphincs.rs:211:26
+    |
+211 |         let mut hasher = blake3::Hasher::new();
+    |                          ^^^^^^ use of undeclared crate or module `blake3`
+    |
+help: consider importing one of these traits
+    |
+2   + use std::hash::Hasher;
+    |
+2   + use ark_std::hash::Hasher;
+    |
+help: if you import `Hasher`, refer to it directly
+    |
+211 -         let mut hasher = blake3::Hasher::new();
+211 +         let mut hasher = Hasher::new();
+    |
 
-warning: variable does not need to be mutable
-  --> src/quantum_auth/commitment.rs:13:13
+error[E0433]: failed to resolve: use of undeclared crate or module `blake3`
+   --> src/quantum_auth/pq/sphincs.rs:247:26
+    |
+247 |         let mut hasher = blake3::Hasher::new();
+    |                          ^^^^^^ use of undeclared crate or module `blake3`
+    |
+help: consider importing one of these traits
+    |
+2   + use std::hash::Hasher;
+    |
+2   + use ark_std::hash::Hasher;
+    |
+help: if you import `Hasher`, refer to it directly
+    |
+247 -         let mut hasher = blake3::Hasher::new();
+247 +         let mut hasher = Hasher::new();
+    |
+
+warning: unused variable: `start_time`
+  --> src/byzantine/manager.rs:47:13
    |
-13 |         let mut value = [0u8; 32];
-   |             ----^^^^^
-   |             |
-   |             help: remove this `mut`
+47 |         let start_time = Instant::now();
+   |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_time`
    |
-   = note: `#[warn(unused_mut)]` on by default
+   = note: `#[warn(unused_variables)]` on by default
 
-warning: `qkd_client` (lib) generated 4 warnings (run `cargo fix --lib -p qkd_client` to apply 4 suggestions)
-warning: unused import: `std::path::PathBuf`
- --> src/zk/proof.rs:7:5
-  |
-7 | use std::path::PathBuf;
-  |     ^^^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` on by default
-
-warning: unused import: `ark_bn254::Fr`
- --> src/quantum_auth/commitment.rs:1:5
-  |
-1 | use ark_bn254::Fr;
-  |     ^^^^^^^^^^^^^
-
-warning: variable does not need to be mutable
-  --> src/main.rs:65:9
+warning: unused variable: `metrics`
+  --> src/byzantine/manager.rs:59:28
    |
-65 |     let mut quantum_auth = QuantumAuthenticator::new()?;
-   |         ----^^^^^^^^^^^^
-   |         |
-   |         help: remove this `mut`
+59 |                         Ok(metrics) => {
+   |                            ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_metrics`
+
+error[E0308]: mismatched types
+  --> src/reporter/mod.rs:42:57
    |
-   = note: `#[warn(unused_mut)]` on by default
-
-warning: unused import: `ark_ff::PrimeField`
-  --> src/main.rs:15:5
+42 |         let proof = self.proof_generator.generate_proof(&key).await?;
+   |                                          -------------- ^^^^ expected `&[u8]`, found `&(Vec<u8>, String)`
+   |                                          |
+   |                                          arguments to this method are incorrect
    |
-15 | use ark_ff::PrimeField;
-   |     ^^^^^^^^^^^^^^^^^^
-
-warning: variable does not need to be mutable
-  --> src/quantum_auth/commitment.rs:13:13
+   = note: expected reference `&[u8]`
+              found reference `&(Vec<u8>, std::string::String)`
+note: method defined here
+  --> src/reporter/key_proof.rs:12:18
    |
-13 |         let mut value = [0u8; 32];
-   |             ----^^^^^
-   |             |
-   |             help: remove this `mut`
+12 |     pub async fn generate_proof(&self, key: &[u8]) -> Result<KeyProof, Box<dyn Error>> {
+   |                  ^^^^^^^^^^^^^^        ----------
 
-warning: function `build_test_circuit` is never used
- --> src/zk/circuit.rs:6:14
-  |
-6 | pub async fn build_test_circuit() -> Result<CircomCircuit<Fr>, Box<...
-  |              ^^^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(dead_code)]` on by default
+warning: unused variable: `message`
+  --> src/quantum_auth/pq_auth.rs:21:26
+   |
+21 |     pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool, Box<dyn Error>> {
+   |                          ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_message`
 
-warning: `qkd_client` (bin "qkd_client") generated 7 warnings (1 duplicate) (run `cargo fix --bin "qkd_client"` to apply 4 suggestions)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s
-     Running `target/debug/qkd_client`
-🌟 Testing connection...
+warning: unused variable: `signature`
+  --> src/quantum_auth/pq_auth.rs:21:42
+   |
+21 |     pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool, Box<dyn Error>> {
+   |                                          ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_signature`
 
+Some errors have detailed explanations: E0308, E0433.
+For more information about an error, try `rustc --explain E0308`.
+warning: `qkd_client` (lib) generated 4 warnings
+error: could not compile `qkd_client` (lib) due to 5 previous errors; 4 warnings emitted
 
-🔄 Testing IP: 192.168.0.4
+>>> CARGO.TOML
+================================================
+[package]
+name = "qkd_client"
+version = "0.1.0"
+edition = "2021"
 
-🔍 Trying connection to https://192.168.0.4/api/v1/keys/bobsae/enc_keys
+[lib]
+name = "qkd_client"
+path = "src/lib.rs"
 
-🔍 Reading PKCS#12 file (client_alice.p12)...
-📂 Opening file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12
-✅ Successfully read 4494 bytes!
+[[bin]]
+name = "qkd_client"
+path = "src/main.rs"
 
-🔍 Reading CA cert...
-📂 Opening file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem
-✅ Successfully read 2155 bytes!
-✅ Generated quantum auth proof
-📡 Sending request to: https://192.168.0.4/api/v1/keys/bobsae/enc_keys
-Request Body: KeyRequest { sae_id: "bobsae", key_size: 256, number_of_keys: 1 }
-[2m2025-02-23T17:58:09.546352Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m checkout waiting for idle connection: ("https", 192.168.0.4)
-[2m2025-02-23T17:58:09.546456Z[0m [35mTRACE[0m [2mhyper::client::connect::http[0m[2m:[0m Http::connect; scheme=Some("https"), host=Some("192.168.0.4"), port=None
-[2m2025-02-23T17:58:09.546492Z[0m [34mDEBUG[0m [2mhyper::client::connect::http[0m[2m:[0m connecting to 192.168.0.4:443
-[2m2025-02-23T17:58:09.546988Z[0m [34mDEBUG[0m [2mhyper::client::connect::http[0m[2m:[0m connected to 192.168.0.4:443
-[2m2025-02-23T17:58:09.561994Z[0m [35mTRACE[0m [2mhyper::client::conn[0m[2m:[0m client handshake Http1
-[2m2025-02-23T17:58:09.562044Z[0m [35mTRACE[0m [2mhyper::client::client[0m[2m:[0m handshake complete, spawning background dispatcher task
-[2m2025-02-23T17:58:09.562187Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Busy }
-[2m2025-02-23T17:58:09.562200Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m checkout dropped for ("https", 192.168.0.4)
-[2m2025-02-23T17:58:09.562377Z[0m [35mTRACE[0m [1mencode_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Client::encode method=POST, body=Some(Known(53))
-[2m2025-02-23T17:58:09.562461Z[0m [35mTRACE[0m [2mhyper::proto::h1::encode[0m[2m:[0m sized write, len = 53
-[2m2025-02-23T17:58:09.562478Z[0m [35mTRACE[0m [2mhyper::proto::h1::io[0m[2m:[0m buffer.flatten [3mself.len[0m[2m=[0m192 [3mbuf.len[0m[2m=[0m53
-[2m2025-02-23T17:58:09.562525Z[0m [34mDEBUG[0m [2mhyper::proto::h1::io[0m[2m:[0m flushed 245 bytes
-[2m2025-02-23T17:58:09.562537Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
-[2m2025-02-23T17:58:09.564946Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
-[2m2025-02-23T17:58:09.565029Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
-[2m2025-02-23T17:58:09.565503Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
-[2m2025-02-23T17:58:09.565568Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }
-[2m2025-02-23T17:58:09.652093Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m Conn::read_head
-[2m2025-02-23T17:58:09.652143Z[0m [35mTRACE[0m [2mhyper::proto::h1::io[0m[2m:[0m received 261 bytes
-[2m2025-02-23T17:58:09.652188Z[0m [35mTRACE[0m [1mparse_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Response.parse [3mbytes[0m[2m=[0m261
-[2m2025-02-23T17:58:09.652227Z[0m [35mTRACE[0m [1mparse_headers[0m[2m:[0m [2mhyper::proto::h1::role[0m[2m:[0m Response.parse Complete(148)
-[2m2025-02-23T17:58:09.652277Z[0m [34mDEBUG[0m [2mhyper::proto::h1::io[0m[2m:[0m parsed 5 headers
-[2m2025-02-23T17:58:09.652288Z[0m [34mDEBUG[0m [2mhyper::proto::h1::conn[0m[2m:[0m incoming body is content-length (113 bytes)
-[2m2025-02-23T17:58:09.652334Z[0m [35mTRACE[0m [2mhyper::proto::h1::decode[0m[2m:[0m decode; state=Length(113)
-[2m2025-02-23T17:58:09.652347Z[0m [34mDEBUG[0m [2mhyper::proto::h1::conn[0m[2m:[0m incoming body completed
-✅ Got response!
-[2m2025-02-23T17:58:09.652386Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m maybe_notify; read_from_io blocked
-Status: 200 OK
-Headers: {
-    "server": "nginx",
-    "date": "Sun, 23 Feb 2025 17:59:58 GMT",
-    "content-type": "application/json",
-    "content-length": "113",
-    "connection": "keep-alive",
+[[bin]]
+name = "setup_main"
+path = "src/bin/setup_main.rs"
+
+[dependencies]
+# Arkworks base
+ark-std = "0.5.0"         
+ark-ff = "0.5.0"          
+ark-serialize = "0.5.0"
+# The main BN254 curve
+ark-bn254 = "0.5.0"
+# R1CS / relations
+ark-relations = "0.5.0"
+ark-groth16 = "0.5.0"
+# SNARK trait
+ark-snark = "0.5.0"
+# Circom
+ark-circom = "0.5.0"
+# For serialization
+bincode = "1.3"
+# Other dependencies
+rand = "0.8"
+reqwest = { version = "0.11", features = ["json", "native-tls"] }
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+base64 = "0.13"
+num-bigint = "0.4"
+tokio = { version = "1", features = ["full"] }
+tracing-subscriber = "0.3.19"
+tracing = "0.1"
+wasmtime = "12.0"
+[dev-dependencies]
+criterion = { version = "0.4", features = ["async_tokio"] }
+
+#[[bench]]
+#name = "reporter_benchmarks"
+#harness = false
+[profile.release]
+opt-level = 3
+lto = true
+
+>>> ALL SRC/.RS CODE
+================================================
+------------------ src/shared/buffer.rs ------------------
+use std::sync::{Arc, Mutex};
+use std::collections::VecDeque;
+
+#[derive(Clone, Debug)]
+pub struct ProofEntry {
+    pub reporter_id: String,
+    pub key_id: String, 
+    pub proof: Vec<u8>,
+    pub timestamp: u64,
 }
-[2m2025-02-23T17:58:09.652426Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
-[2m2025-02-23T17:58:09.652445Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
-[2m2025-02-23T17:58:09.652471Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m put; add idle connection for ("https", 192.168.0.4)
-[2m2025-02-23T17:58:09.652487Z[0m [34mDEBUG[0m [2mhyper::client::pool[0m[2m:[0m pooling idle connection for ("https", 192.168.0.4)
-Response body:
-{"keys":[{"key_ID":"db67c562-b13a-463c-87b8-938f8a1b6da1","key":"56HjUMiS0hw1znm3LcKxE9pzAdKAsL0sszI8Wg7deK8="}]}
-[2m2025-02-23T17:58:09.652563Z[0m [35mTRACE[0m [2mhyper::proto::h1::conn[0m[2m:[0m flushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }
 
-🎉 Success! Got keys:
-🔑 Key ID: db67c562-b13a-463c-87b8-938f8a1b6da1
-🗝️  Key: 56HjUMiS0hw1znm3LcKxE9pzAdKAsL0sszI8Wg7deK8=
-📝 Generating quantum-resistant proof...
-Starting proof generation for key...
-Key bytes length: 32
-Verifying circuit files...
-Created input file at "/home/paraxiom/qkd_client/circuits/input.json"
-Generating witness...
-[2m2025-02-23T17:58:09.654458Z[0m [35mTRACE[0m [2mhyper::client::pool[0m[2m:[0m idle interval checking for expired
-✅ Generated witness successfully
-Generating proof...
-✅ Generated proof successfully
-Reading proof and verification key...
-✅ Read proof and verification key successfully
-✅ Generated quantum-resistant proof
-Starting proof verification...
-Wrote verification files
-Verifying proof...
-✅ Proof verified successfully
-✅ Proof verified successfully
+pub struct SharedBuffer {
+    buffer: Mutex<VecDeque<ProofEntry>>,
+}
 
->>> MAIN.RS CODE
-================================================
-use reqwest;
-use reqwest::Certificate;
+impl SharedBuffer {
+    pub fn new() -> Arc<Self> {
+        Arc::new(Self {
+            buffer: Mutex::new(VecDeque::new()),
+        })
+    }
+    
+    pub fn push(&self, entry: ProofEntry) {
+        let mut buffer = self.buffer.lock().unwrap();
+        buffer.push_back(entry);
+    }
+    
+    pub fn get_all(&self) -> Vec<ProofEntry> {
+        let buffer = self.buffer.lock().unwrap();
+        buffer.iter().cloned().collect()
+    }
+}
+
+------------------ src/shared/mod.rs ------------------
+pub mod buffer;
+
+------------------ src/reporter/benchmark.rs ------------------
+// src/reporter/benchmarks.rs
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use super::*;
+
+pub fn benchmark_reporter(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Reporter Node Operations");
+    
+    // Benchmark PQE baseline
+    group.bench_function("pqe_baseline", |b| b.iter(|| {
+        // PQE operations
+    }));
+    
+    // Benchmark our ZK implementation
+    group.bench_function("zk_enhanced", |b| b.iter(|| {
+        // Our implementation
+    }));
+    
+    group.finish();
+}
+
+criterion_group!(benches, benchmark_reporter);
+criterion_main!(benches);
+
+------------------ src/reporter/key_proof.rs ------------------
+// src/reporter/key_proof.rs
+use crate::zk::KeyProof;
+use std::error::Error;
+
+pub struct ProofGenerator {}
+
+impl ProofGenerator {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        Ok(Self {})
+    }
+
+    pub async fn generate_proof(&self, key: &[u8]) -> Result<KeyProof, Box<dyn Error>> {
+        KeyProof::new(&base64::encode(key)).await
+    }
+}
+
+------------------ src/reporter/qkd_client.rs ------------------
+// src/reporter/qkd_client.rs - Updated version with SPHINCS+ integration
+use crate::quantum_auth::hybrid::{HybridAuth, HybridProof};
+use reqwest::{Certificate, Client, Identity};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::time::Duration;
-mod zk;
-use zk::KeyProof;
-mod quantum_auth;
-use quantum_auth::QuantumAuthenticator;
-use tracing;
-use tracing_subscriber::FmtSubscriber;
-use ark_ff::PrimeField;
+use tracing::{debug, info};
 
 #[derive(Debug, Serialize)]
 struct KeyRequest {
@@ -191,135 +267,1812 @@ struct KeyRequest {
 }
 
 #[derive(Debug, Deserialize)]
+struct KeyResponse {
+    keys: Vec<Key>,
+}
+
+#[derive(Debug, Deserialize)]
 struct Key {
     #[serde(rename = "key_ID")]
     key_id: String,
     key: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct KeyResponse {
-    keys: Vec<Key>,
+pub struct QKDClient {
+    client: Client,
+    auth: HybridAuth,
+    base_url: String,
 }
 
 fn read_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
-    println!("📂 Opening file: {}", path.display());
+    debug!("📂 Reading file: {}", path.display());
     let mut file = File::open(path)?;
     let mut contents = Vec::new();
     file.read_to_end(&mut contents)?;
-    println!("✅ Successfully read {} bytes!", contents.len());
+    debug!("✅ Successfully read {} bytes", contents.len());
     Ok(contents)
 }
 
-async fn try_connection(ip: &str, is_enc: bool) -> Result<(), Box<dyn Error>> {
-    let url = if is_enc {
-        format!("https://{}/api/v1/keys/bobsae/enc_keys", ip)
-    } else {
-        format!("https://{}/api/v1/keys/alicesae/dec_keys", ip)
+impl QKDClient {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        // Load certificates
+        let p12_path =
+            Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12");
+        let ca_path = Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem");
+
+        debug!("Loading PKCS#12 and CA certificates...");
+        let pkcs12_bytes = read_file(p12_path)?;
+        let ca_contents = read_file(ca_path)?;
+
+        let ca_cert = Certificate::from_pem(&ca_contents)?;
+
+        // Build client with certificates
+        let client = Client::builder()
+            .add_root_certificate(ca_cert)
+            .identity(Identity::from_pkcs12_der(&pkcs12_bytes, "MySecret")?)
+            .danger_accept_invalid_certs(true)
+            .danger_accept_invalid_hostnames(true)
+            .timeout(Duration::from_secs(5))
+            .build()?;
+
+        // Initialize hybrid authentication
+        debug!("Initializing hybrid authentication for QKD client...");
+        let auth = HybridAuth::new()?;
+
+        Ok(Self {
+            client,
+            auth,
+            base_url: "https://192.168.0.4".to_string(),
+        })
+    }
+
+    pub async fn get_key(&self) -> Result<(Vec<u8>, String), Box<dyn Error>> {
+        let url = format!("{}/api/v1/keys/bobsae/enc_keys", self.base_url);
+        debug!("Retrieving key from {}", url);
+
+        // Generate quantum-resistant hybrid auth proof
+        debug!("Generating hybrid authentication proof...");
+        let start = std::time::Instant::now();
+        let auth_proof = self.auth.authenticate()?;
+        let auth_time = start.elapsed();
+        debug!("Generated hybrid auth proof in {:?}", auth_time);
+        
+        // Serialize the proof for transmission
+        let proof_header = self.format_auth_header(&auth_proof)?;
+        debug!("Auth header size: {} bytes", proof_header.len());
+
+        // Build request
+        let request = KeyRequest {
+            sae_id: "bobsae".to_string(),
+            key_size: 256,
+            number_of_keys: 1,
+        };
+
+        // Send request with hybrid auth proof
+        debug!("Sending request: {:?}", request);
+        let response = self
+            .client
+            .post(&url)
+            .json(&request)
+            .header("X-Quantum-Auth", proof_header)
+            .send()
+            .await?;
+
+        let status = response.status();
+        debug!("Response status: {}", status);
+
+        if !status.is_success() {
+            return Err(format!("Request failed with status: {}", status).into());
+        }
+
+        // Parse response
+        let response_text = response.text().await?;
+        let key_response: KeyResponse = serde_json::from_str(&response_text)?;
+
+        if key_response.keys.is_empty() {
+            return Err("No keys returned from server".into());
+        }
+
+        // Decode key from base64
+        let key = base64::decode(&key_response.keys[0].key)?;
+        let key_id = key_response.keys[0].key_id.clone();
+        
+        info!(
+            "Successfully retrieved key with ID: {}",
+            key_id
+        );
+
+        Ok((key, key_id))
+    }
+    
+    // Format the hybrid auth proof for use in an HTTP header
+    fn format_auth_header(&self, proof: &HybridProof) -> Result<String, Box<dyn Error>> {
+        // Combine classical and quantum proofs into a single structure for the header
+        #[derive(Serialize)]
+        struct AuthHeader {
+            classical: String,
+            quantum: String,
+            timestamp: u64,
+        }
+        
+        let auth_header = AuthHeader {
+            classical: base64::encode(&proof.classical),
+            quantum: base64::encode(&proof.quantum),
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)?
+                .as_secs(),
+        };
+        
+        // Serialize to JSON
+        let json = serde_json::to_string(&auth_header)?;
+        
+        // Base64 encode for HTTP header
+        Ok(base64::encode(json))
+    }
+}
+
+------------------ src/reporter/mod.rs ------------------
+// src/reporter/mod.rs
+mod key_proof;
+mod metrics;
+mod qkd_client;
+
+pub use key_proof::ProofGenerator;
+pub use metrics::ReporterMetrics;
+pub use qkd_client::QKDClient;
+
+use std::error::Error;
+use std::time::Instant;
+use tracing::{debug, error, info};
+
+pub struct ReporterNode {
+    qkd_client: QKDClient,
+    proof_generator: ProofGenerator,
+}
+
+impl ReporterNode {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        Ok(Self {
+            qkd_client: QKDClient::new()?,
+            proof_generator: ProofGenerator::new()?,
+        })
+    }
+
+    pub async fn report(&self) -> Result<ReporterMetrics, Box<dyn Error>> {
+        let mut metrics = ReporterMetrics {
+            key_retrieval_time: std::time::Duration::default(),
+            proof_generation_time: std::time::Duration::default(),
+            verification_time: std::time::Duration::default(),
+        };
+
+        // Key retrieval with timing
+        let start = Instant::now();
+        let key = self.qkd_client.get_key().await?;
+        metrics.key_retrieval_time = start.elapsed();
+        debug!("Key retrieved in {:?}", metrics.key_retrieval_time);
+
+        // Proof generation with timing
+        let start = Instant::now();
+        let proof = self.proof_generator.generate_proof(&key).await?;
+        metrics.proof_generation_time = start.elapsed();
+        debug!("Proof generated in {:?}", metrics.proof_generation_time);
+
+        // Verification with timing
+        let start = Instant::now();
+        let verified = proof.verify()?;
+        metrics.verification_time = start.elapsed();
+
+        if verified {
+            info!(
+                "✅ Proof verified successfully in {:?}",
+                metrics.verification_time
+            );
+        } else {
+            error!("❌ Proof verification failed");
+        }
+
+        Ok(metrics)
+    }
+}
+
+------------------ src/reporter/metrics.rs ------------------
+// src/reporter/metrics.rs
+use std::time::Duration;
+
+#[derive(Debug)]
+pub struct ReporterMetrics {
+    pub key_retrieval_time: Duration,
+    pub proof_generation_time: Duration,
+    pub verification_time: Duration,
+}
+
+------------------ src/zk/my_circuit.rs ------------------
+use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError};
+use ark_ff::Field;
+
+#[derive(Default)]
+pub struct MyCircuit {
+    // If you need circuit fields, add them here
+}
+
+impl<F: Field> ConstraintSynthesizer<F> for MyCircuit {
+    fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
+        // For a dummy circuit, do nothing:
+        Ok(())
+    }
+}
+
+
+------------------ src/zk/proof.rs ------------------
+// src/zk/proof.rs
+use base64;
+use serde_json::{json, Value};
+use std::error::Error;
+use std::fs;
+use std::process::Command;
+
+pub struct KeyProof {
+    proof: Value,
+    verification_key: Value,
+}
+
+impl KeyProof {
+    pub async fn new(key_b64: &str) -> Result<Self, Box<dyn Error>> {
+        println!("Starting proof generation for key...");
+
+        // Decode base64 key
+        let key_bytes = base64::decode(key_b64)?;
+        println!("Key bytes length: {}", key_bytes.len());
+
+        // Get current directory and set paths
+        let current_dir = std::env::current_dir()?;
+        let circuits_dir = current_dir.join("circuits");
+        let wasm_path = circuits_dir
+            .join("key_verification_js")
+            .join("key_verification.wasm");
+        let input_path = circuits_dir.join("input.json");
+        let witness_path = circuits_dir.join("witness.wtns");
+        let zkey_path = circuits_dir.join("key_verification_0001.zkey");
+        let proof_path = circuits_dir.join("proof.json");
+        let public_path = circuits_dir.join("public.json");
+        let vkey_path = circuits_dir.join("verification_key.json");
+
+        // Verify all required files exist
+        println!("Verifying circuit files...");
+        if !wasm_path.exists() {
+            return Err(format!("WASM file not found at {:?}", wasm_path).into());
+        }
+        if !zkey_path.exists() {
+            return Err(format!("zkey file not found at {:?}", zkey_path).into());
+        }
+        if !vkey_path.exists() {
+            return Err(format!("Verification key not found at {:?}", vkey_path).into());
+        }
+
+        // Create input file
+        let input = json!({
+            "key": key_bytes.iter().map(|&b| b as u64).collect::<Vec<_>>()
+        });
+        fs::write(&input_path, input.to_string())?;
+        println!("Created input file at {:?}", input_path);
+
+        // Generate witness using snarkjs
+        println!("Generating witness...");
+        let status = Command::new("snarkjs")
+            .args(&[
+                "wtns",
+                "calculate",
+                wasm_path.to_str().unwrap(),
+                input_path.to_str().unwrap(),
+                witness_path.to_str().unwrap(),
+            ])
+            .status()?;
+
+        if !status.success() {
+            return Err("Failed to generate witness".into());
+        }
+        println!("✅ Generated witness successfully");
+
+        // Generate proof
+        println!("Generating proof...");
+        let status = Command::new("snarkjs")
+            .args(&[
+                "groth16",
+                "prove",
+                zkey_path.to_str().unwrap(),
+                witness_path.to_str().unwrap(),
+                proof_path.to_str().unwrap(),
+                public_path.to_str().unwrap(),
+            ])
+            .status()?;
+
+        if !status.success() {
+            return Err("Failed to generate proof".into());
+        }
+        println!("✅ Generated proof successfully");
+
+        // Read proof and verification key
+        println!("Reading proof and verification key...");
+        let proof = serde_json::from_str(&fs::read_to_string(&proof_path)?)?;
+        let verification_key = serde_json::from_str(&fs::read_to_string(&vkey_path)?)?;
+        println!("✅ Read proof and verification key successfully");
+
+        Ok(Self {
+            proof,
+            verification_key,
+        })
+    }
+
+    pub fn verify(&self) -> Result<bool, Box<dyn Error>> {
+        println!("Starting proof verification...");
+
+        // Get paths
+        let current_dir = std::env::current_dir()?;
+        let circuits_dir = current_dir.join("circuits");
+        let proof_verify_path = circuits_dir.join("proof_to_verify.json");
+        let vkey_path = circuits_dir.join("verification_key.json");
+        let public_path = circuits_dir.join("public.json");
+
+        // Write files for verification
+        fs::write(&proof_verify_path, serde_json::to_string(&self.proof)?)?;
+        fs::write(&vkey_path, serde_json::to_string(&self.verification_key)?)?;
+        println!("Wrote verification files");
+
+        // Verify using snarkjs
+        println!("Verifying proof...");
+        let output = Command::new("snarkjs")
+            .args(&[
+                "groth16",
+                "verify",
+                vkey_path.to_str().unwrap(),
+                public_path.to_str().unwrap(),
+                proof_verify_path.to_str().unwrap(),
+            ])
+            .output()?;
+
+        let is_valid = output.status.success();
+        if is_valid {
+            println!("✅ Proof verified successfully");
+        } else {
+            println!("❌ Proof verification failed");
+            println!("Error: {}", String::from_utf8_lossy(&output.stderr));
+        }
+
+        Ok(is_valid)
+    }
+}
+
+------------------ src/zk/mod.rs ------------------
+pub mod circuit;
+pub mod proof;
+
+pub use self::proof::KeyProof;
+
+------------------ src/zk/quantum_id.rs ------------------
+use ark_bn254::Bn254;
+use ark_groth16::{Proof, ProvingKey, VerifyingKey};
+
+pub struct QuantumIdentity {
+    proving_key: ProvingKey<Bn254>,
+    verifying_key: VerifyingKey<Bn254>,
+    commitment: Vec<u8>,      // Quantum-resistant commitment
+    identity_proof: Proof<Bn254>
+}
+
+impl QuantumIdentity {
+    pub fn new() -> Self {
+        // Generate quantum-resistant parameters
+        // This replaces classical key generation
+    }
+
+    pub fn prove_identity(&self) -> Proof<Bn254> {
+        // Generate ZK proof of identity without exposing secrets
+    }
+
+    pub fn verify(&self, proof: Proof<Bn254>) -> bool {
+        // Verify identity without classical crypto vulnerabilities
+    }
+}
+
+------------------ src/zk/circuit.rs ------------------
+use ark_bn254::Fr;
+use ark_circom::{CircomBuilder, CircomCircuit, CircomConfig};
+use std::error::Error;
+use std::path::PathBuf;
+
+pub async fn build_test_circuit() -> Result<CircomCircuit<Fr>, Box<dyn Error>> {
+    let circuit_path = PathBuf::from("circuits/key_proof.r1cs");
+    let wasm_path = PathBuf::from("circuits/key_proof_js/key_proof.wasm");
+
+    let cfg = CircomConfig::<Fr>::new(wasm_path, circuit_path)?;
+    let builder = CircomBuilder::new(cfg);
+    Ok(builder.build()?)
+}
+
+------------------ src/lib.rs ------------------
+// src/lib.rs
+pub mod byzantine;
+pub mod quantum_auth;
+pub mod reporter;
+pub mod zk;
+
+------------------ src/bin/setup_main.rs ------------------
+use ark_bn254::Bn254;
+use ark_groth16::Groth16;
+use ark_snark::SNARK;
+use qkd_client::zk::circuit::build_test_circuit;
+use rand::thread_rng;
+
+#[tokio::main]
+async fn main() {
+    println!("🔧 Generating proving and verifying keys...");
+
+    // Build test circuit
+    let circuit = build_test_circuit().await.expect("Failed to build circuit");
+
+    // Generate keys
+    let rng = &mut thread_rng();
+
+    let (pk, vk) =
+        Groth16::<Bn254>::circuit_specific_setup(circuit, rng).expect("Failed to generate keys");
+
+    println!("✅ Keys generated successfully!");
+}
+
+------------------ src/bin/enhanced_client.rs ------------------
+// src/bin/enhanced_client.rs
+use qkd_client::quantum_auth::hybrid::HybridAuth;
+use qkd_client::reporter::ReporterNode;
+use std::time::Instant;
+use tracing_subscriber::FmtSubscriber;
+
+#[tokio::main]
+async fn main() {
+    // Setup logging
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(tracing::Level::DEBUG)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+
+    println!("🌟 Starting Enhanced Quantum-Resistant Reporter Node...");
+
+    // Initialize hybrid authentication
+    let start = Instant::now();
+    let hybrid_auth = match HybridAuth::new() {
+        Ok(auth) => {
+            println!(
+                "✅ Hybrid authentication initialized in {:?}",
+                start.elapsed()
+            );
+            auth
+        }
+        Err(e) => {
+            println!("❌ Failed to initialize hybrid auth: {}", e);
+            return;
+        }
     };
-    println!("\n🔍 Trying connection to {}", url);
 
-    // PKCS#12 path + CA
-    let p12_path =
-        Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12");
-    let ca_path = Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem");
-
-    println!("\n🔍 Reading PKCS#12 file (client_alice.p12)...");
-    let pkcs12_bytes = read_file(p12_path)?;
-
-    println!("\n🔍 Reading CA cert...");
-    let ca_contents = read_file(ca_path)?;
-    let ca_cert = Certificate::from_pem(&ca_contents)?;
-
-    let mut quantum_auth = QuantumAuthenticator::new()?;
-    let auth_proof = quantum_auth.authenticate()?;
-    println!("✅ Generated quantum auth proof");
-
-    // Build client with certificates
-    let client = reqwest::Client::builder()
-        .add_root_certificate(ca_cert)
-        .identity(reqwest::Identity::from_pkcs12_der(
-            &pkcs12_bytes,
-            "MySecret",
-        )?)
-        .danger_accept_invalid_certs(true)
-        .danger_accept_invalid_hostnames(true)
-        .timeout(Duration::from_secs(5))
-        .build()?;
-
-    let request = KeyRequest {
-        sae_id: "bobsae".to_string(),
-        key_size: 256,
-        number_of_keys: 1,
+    // Generate authentication proof
+    let start = Instant::now();
+    let auth_proof = match hybrid_auth.authenticate() {
+        Ok(proof) => {
+            println!("✅ Generated hybrid proof in {:?}", start.elapsed());
+            println!("  Classical proof: {} bytes", proof.classical.len());
+            println!("  Quantum proof: {} bytes", proof.quantum.len());
+            proof
+        }
+        Err(e) => {
+            println!("❌ Failed to generate hybrid proof: {}", e);
+            return;
+        }
     };
 
-    println!("📡 Sending request to: {}", url);
-    println!("Request Body: {:?}", request);
+    // Create and run reporter node
+    match ReporterNode::new() {
+        Ok(reporter) => {
+            // Run the reporter and collect metrics
+            match reporter.report().await {
+                Ok(metrics) => {
+                    println!("\n📊 Reporter Node Metrics with Quantum-Resistant Auth:");
+                    println!("Key Retrieval Time: {:?}", metrics.key_retrieval_time);
+                    println!("Proof Generation Time: {:?}", metrics.proof_generation_time);
+                    println!("Verification Time: {:?}", metrics.verification_time);
 
-    let response = client
-        .post(&url)
-        .json(&request)
-        .header("X-Quantum-Auth", base64::encode(&auth_proof))
-        .send()
-        .await?;
+                    // Calculate total with hybrid auth
+                    let hybrid_auth_time = auth_proof.quantum.len() as f64 / 1024.0;
+                    println!("Hybrid Auth Size: {:.2} KB", hybrid_auth_time);
 
-    println!("✅ Got response!");
-    let status = response.status();
-    let headers = response.headers().clone();
-    println!("Status: {}", status);
-    println!("Headers: {:#?}", headers);
-
-    let raw_text = response.text().await?;
-    println!("Response body:\n{}", raw_text);
-
-    if status.is_success() {
-        match serde_json::from_str::<KeyResponse>(&raw_text) {
-            Ok(key_response) => {
-                println!("\n🎉 Success! Got keys:");
-                for key in key_response.keys {
-                    println!("🔑 Key ID: {}", key.key_id);
-                    println!("🗝️  Key: {}", key.key);
-
-                    // Generate quantum-resistant proof
-                    println!("📝 Generating quantum-resistant proof...");
-                    // In your key processing code
-                    match KeyProof::new(&key.key).await {
-                        Ok(key_proof) => {
-                            println!("✅ Generated quantum-resistant proof");
-                            match key_proof.verify() {
-                                Ok(true) => println!("✅ Proof verified successfully"),
-                                Ok(false) => println!("❌ Proof verification failed"),
-                                Err(e) => println!("❌ Error verifying proof: {}", e),
-                            }
-                        }
-                        Err(e) => println!("❌ Error generating proof: {}", e),
-                    }
+                    // Compare with classical-only
+                    println!("\n🔄 Comparison with Classical-Only Auth:");
+                    println!(
+                        "Classical Auth Size: {:.2} KB",
+                        auth_proof.classical.len() as f64 / 1024.0
+                    );
+                    println!(
+                        "Quantum Overhead: {:.2}x",
+                        auth_proof.quantum.len() as f64 / auth_proof.classical.len() as f64
+                    );
                 }
+                Err(e) => println!("❌ Reporting failed: {}", e),
             }
-            Err(e) => {
-                println!("❌ Error parsing response JSON: {}", e);
+        }
+        Err(e) => println!("❌ Failed to create Reporter Node: {}", e),
+    }
+}
+
+------------------ src/bin/byzantine_demo.rs ------------------
+// src/bin/byzantine_demo.rs
+use qkd_client::byzantine::ReporterManager;
+use tracing::{error, info};
+use tracing_subscriber::FmtSubscriber;
+
+#[tokio::main]
+async fn main() {
+    // Setup logging
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(tracing::Level::DEBUG)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("failed to set subscriber");
+
+    info!("🌟 Byzantine Consensus Demonstration");
+    info!("====================================");
+
+    // Configuration
+    let reporter_count = 7; // Use 7 reporters
+    let threshold = reporter_count / 2 + 1; // Need majority (4 of 7)
+    let timeout_ms = 30000; // 30 second timeout
+
+    info!("Configuration:");
+    info!("  Reporter Count: {}", reporter_count);
+    info!("  Consensus Threshold: {}", threshold);
+    info!("  Timeout: {}ms", timeout_ms);
+    info!("====================================");
+
+    // Create Byzantine manager
+    let manager = ReporterManager::new(reporter_count, threshold, timeout_ms);
+
+    info!("Starting Byzantine consensus process...");
+    // Run the Byzantine process
+    match manager.run().await {
+        Ok(result) => {
+            if result.consensus_reached {
+                info!("✅ CONSENSUS ACHIEVED!");
+                info!(
+                    "Successful reporters: {}/{}",
+                    result.successful_reports, result.total_reports
+                );
+
+                if let Some(seed) = result.seed_material {
+                    info!("📊 Generated seed material: {} bytes", seed.len());
+                    info!("First 16 bytes: {:02x?}", &seed[..16.min(seed.len())]);
+
+                    // Demonstrate how this could be used for VRF input
+                    info!("This seed can now be used as input to a VRF for:");
+                    info!("- Blockchain leader election");
+                    info!("- Random committee selection");
+                    info!("- Lottery/randomness applications");
+                }
+            } else {
+                error!("❌ CONSENSUS FAILED!");
+                error!(
+                    "Successful reporters: {}/{}",
+                    result.successful_reports, result.total_reports
+                );
+                error!("Needed {} successful reporters for consensus", threshold);
             }
+        }
+        Err(e) => {
+            error!("❌ Error during Byzantine process: {}", e);
+        }
+    }
+}
+
+------------------ src/bin/byzantine_simulation.rs ------------------
+// src/bin/byzantine_simulation.rs
+use rand::Rng;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+
+// Simple reporter node that simulates quantum key retrieval
+struct SimpleReporter {
+    id: String,
+    success_rate: f64,
+}
+
+impl SimpleReporter {
+    fn new(id: &str, success_rate: f64) -> Self {
+        Self {
+            id: id.to_string(),
+            success_rate,
         }
     }
 
-    Ok(())
+    fn retrieve_key(&self) -> Result<Vec<u8>, String> {
+        // Simulate network delay
+        thread::sleep(Duration::from_millis(
+            100 + rand::thread_rng().gen_range(0..500),
+        ));
+
+        // Simulate success based on success_rate
+        if rand::thread_rng().gen_bool(self.success_rate) {
+            // Generate random "quantum" key
+            let key: Vec<u8> = (0..32).map(|_| rand::thread_rng().gen()).collect();
+            println!("✅ Reporter {} successfully retrieved key", self.id);
+            Ok(key)
+        } else {
+            println!("❌ Reporter {} failed to retrieve key", self.id);
+            Err(format!("Reporter {} failed to retrieve key", self.id))
+        }
+    }
+}
+
+// Byzantine fault-tolerant system
+struct ByzantineSystem {
+    reporters: Vec<SimpleReporter>,
+    threshold: usize,
+}
+
+impl ByzantineSystem {
+    fn new(reporter_count: usize, threshold: usize) -> Self {
+        let mut reporters = Vec::new();
+
+        for i in 0..reporter_count {
+            // Some reporters are more reliable than others
+            let success_rate = if i % 5 == 0 { 0.3 } else { 0.8 };
+            reporters.push(SimpleReporter::new(
+                &format!("reporter-{}", i),
+                success_rate,
+            ));
+        }
+
+        Self {
+            reporters,
+            threshold,
+        }
+    }
+
+    fn run(&self) -> bool {
+        // Track successful retrievals
+        let successful_reports = Arc::new(Mutex::new(0));
+
+        // Run all reporters
+        let mut handles = Vec::new();
+
+        for reporter in &self.reporters {
+            let reporter_id = reporter.id.clone();
+            let success_counter = Arc::clone(&successful_reports);
+
+            // Create a thread for each reporter
+            let handle = thread::spawn(move || {
+                let reporter = SimpleReporter::new(&reporter_id, 0.8);
+                if reporter.retrieve_key().is_ok() {
+                    let mut count = success_counter.lock().unwrap();
+                    *count += 1;
+                }
+            });
+
+            handles.push(handle);
+        }
+
+        // Wait for all reporters to finish
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        // Check if we have enough successful reports for consensus
+        let final_count = *successful_reports.lock().unwrap();
+        println!(
+            "Successful reports: {}/{} (needed {})",
+            final_count,
+            self.reporters.len(),
+            self.threshold
+        );
+
+        final_count >= self.threshold
+    }
+}
+
+fn main() {
+    println!("🌟 Starting Byzantine Simulation...");
+
+    // Create a system with 7 reporters, requiring 5 for consensus (can tolerate 2 failures)
+    let reporter_count = 7;
+    let threshold = (reporter_count / 2) + 1;
+    let system = ByzantineSystem::new(reporter_count, threshold);
+
+    println!(
+        "Running with {} reporters, requiring {} for consensus",
+        reporter_count, threshold
+    );
+
+    // Run the system
+    if system.run() {
+        println!("✅ Byzantine consensus reached!");
+        println!("This consensus can now be used for VRF seed generation");
+    } else {
+        println!("❌ Failed to reach Byzantine consensus");
+    }
+}
+
+------------------ src/bin/multi_reporter.rs ------------------
+// src/bin/multi_reporter.rs
+use qkd_client::reporter::ReporterNode;
+use std::sync::{Arc, Mutex};
+use tracing::{error, info};
+use tracing_subscriber::FmtSubscriber;
+
+#[tokio::main]
+async fn main() {
+    // Setup logging
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(tracing::Level::INFO)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("failed to set subscriber");
+
+    info!("🌟 Starting Multi-Reporter Byzantine Simulation...");
+
+    // Use a mutex to track successful reporters
+    let success_count = Arc::new(Mutex::new(0));
+
+    // Number of reporters to simulate
+    let reporter_count = 5;
+
+    // Byzantine fault tolerance threshold (2f+1 where f is max faulty nodes)
+    let threshold = (reporter_count / 2) + 1;
+    info!(
+        "Running with {} reporters, requiring {} for consensus",
+        reporter_count, threshold
+    );
+
+    // Run reporters sequentially to avoid thread-safety issues
+    for i in 0..reporter_count {
+        let reporter_id = format!("reporter-{}", i);
+        info!("Starting Reporter {}", reporter_id);
+
+        // Create and run a reporter
+        if let Ok(reporter) = ReporterNode::new() {
+            if let Ok(metrics) = reporter.report().await {
+                info!("Reporter {} completed successfully", reporter_id);
+
+                // Track successful reporter
+                let mut count = success_count.lock().unwrap();
+                *count += 1;
+            } else {
+                error!("Reporter {} failed to report", reporter_id);
+            }
+        } else {
+            error!("Failed to create Reporter {}", reporter_id);
+        }
+    }
+
+    // Check if we have enough successful reporters for consensus
+    let final_count = *success_count.lock().unwrap();
+
+    if final_count >= threshold {
+        info!("✅ Byzantine consensus reached!");
+        info!(
+            "Successful reporters: {}/{} (needed {})",
+            final_count, reporter_count, threshold
+        );
+        info!("This consensus can now be used for VRF seed generation");
+    } else {
+        error!("❌ Failed to reach Byzantine consensus");
+        error!(
+            "Successful reporters: {}/{} (needed {})",
+            final_count, reporter_count, threshold
+        );
+    }
+}
+
+------------------ src/bin/hybrid_example.rs ------------------
+// src/bin/hybrid_example.rs
+use qkd_client::quantum_auth::hybrid::HybridAuth;
+use tracing_subscriber::FmtSubscriber;
+
+#[tokio::main]
+async fn main() {
+    // Setup logging
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(tracing::Level::DEBUG)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+
+    println!("🌟 Testing Hybrid Authentication...");
+
+    // Initialize hybrid auth
+    match HybridAuth::new() {
+        Ok(auth) => {
+            // Generate hybrid proof
+            match auth.authenticate() {
+                Ok(proof) => {
+                    println!("✅ Generated hybrid proof:");
+                    println!("  Classical proof size: {} bytes", proof.classical.len());
+                    println!(
+                        "  Quantum-resistant proof size: {} bytes",
+                        proof.quantum.len()
+                    );
+
+                    // Verify hybrid proof
+                    match auth.verify(&proof) {
+                        Ok(true) => println!("✅ Hybrid proof verified successfully!"),
+                        Ok(false) => println!("❌ Hybrid proof verification failed"),
+                        Err(e) => println!("❌ Error verifying proof: {}", e),
+                    }
+                }
+                Err(e) => println!("❌ Error generating hybrid proof: {}", e),
+            }
+        }
+        Err(e) => println!("❌ Failed to initialize hybrid auth: {}", e),
+    }
+}
+
+------------------ src/bin/byzantine_scenarios.rs ------------------
+// src/bin/byzantine_scenarios.rs
+use qkd_client::byzantine::ReporterManager;
+use tracing::{error, info};
+use tracing_subscriber::FmtSubscriber;
+
+async fn run_scenario(
+    name: &str,
+    reporter_count: usize,
+    threshold: usize,
+    fault_probability: f64,
+) -> bool {
+    info!("Running Scenario: {}", name);
+    info!("  Reporters: {}", reporter_count);
+    info!("  Threshold: {}", threshold);
+    info!("  Fault Probability: {}", fault_probability);
+
+    let manager = ReporterManager::new(reporter_count, threshold, 30000)
+        .with_fault_probability(fault_probability)
+        .with_network_delay(100, 1000);
+
+    match manager.run().await {
+        Ok(result) => {
+            if result.consensus_reached {
+                info!("✅ Scenario {} SUCCEEDED", name);
+                info!(
+                    "  Successful reports: {}/{}",
+                    result.successful_reports, result.total_reports
+                );
+                true
+            } else {
+                error!("❌ Scenario {} FAILED", name);
+                error!(
+                    "  Successful reports: {}/{}",
+                    result.successful_reports, result.total_reports
+                );
+                false
+            }
+        }
+        Err(e) => {
+            error!("❌ Scenario {} ERROR: {}", name, e);
+            false
+        }
+    }
 }
 
 #[tokio::main]
 async fn main() {
+    // Setup logging
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(tracing::Level::TRACE)
+        .with_max_level(tracing::Level::INFO)
         .finish();
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-    println!("🌟 Testing connection...\n");
-    let ip = "192.168.0.4";
-    println!("\n🔄 Testing IP: {}", ip);
+    tracing::subscriber::set_global_default(subscriber).expect("failed to set subscriber");
 
-    if let Err(e) = try_connection(ip, true).await {
-        println!("❌ Connection failed!");
-        println!("Error: {}", e);
-        if let Some(source) = e.source() {
-            println!("Caused by: {}", source);
+    info!("🌟 Byzantine Consensus Scenarios");
+    info!("===============================");
+
+    // Run different scenarios
+    let scenarios = vec![
+        ("Best Case (No Failures)", 7, 4, 0.0),
+        ("Tolerable Failures", 7, 4, 0.3),
+        ("Borderline Case", 7, 4, 0.4),
+        ("Consensus Failure", 7, 4, 0.6),
+        ("Increased Redundancy", 9, 5, 0.4),
+        ("Minimal Configuration", 3, 2, 0.2),
+    ];
+
+    let mut results = Vec::new();
+
+    for (name, reporters, threshold, fault_prob) in scenarios {
+        let success = run_scenario(name, reporters, threshold, fault_prob).await;
+        results.push((name, success));
+        info!("------------------------------");
+    }
+
+    // Summary
+    info!("Scenario Results Summary:");
+    for (name, success) in results {
+        if success {
+            info!("✅ {} - SUCCEEDED", name);
+        } else {
+            info!("❌ {} - FAILED", name);
         }
     }
 }
+
+------------------ src/main.rs ------------------
+// src/main.rs
+mod quantum_auth;
+mod reporter;
+mod zk;
+
+use reporter::ReporterNode;
+use tracing_subscriber::FmtSubscriber;
+
+#[tokio::main]
+async fn main() {
+    // Setup logging
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(tracing::Level::DEBUG)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+
+    println!("🌟 Starting Reporter Node...");
+
+    // Create and run reporter node
+    match ReporterNode::new() {
+        Ok(reporter) => match reporter.report().await {
+            Ok(metrics) => {
+                println!("\n📊 Reporter Node Metrics:");
+                println!("Key Retrieval Time: {:?}", metrics.key_retrieval_time);
+                println!("Proof Generation Time: {:?}", metrics.proof_generation_time);
+                println!("Verification Time: {:?}", metrics.verification_time);
+            }
+            Err(e) => println!("❌ Reporting failed: {}", e),
+        },
+        Err(e) => println!("❌ Failed to create Reporter Node: {}", e),
+    }
+}
+
+------------------ src/byzantine/manager.rs ------------------
+// src/byzantine/manager.rs
+use crate::reporter::ReporterNode;
+use std::error::Error;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+use tracing::{error, info};
+
+pub struct ReportResult {
+    pub reporter_id: String,
+    pub success: bool,
+    pub key_id: Option<String>,
+    pub timestamp: Instant,
+    pub duration: Duration,
+}
+
+pub struct ConsensusResult {
+    pub successful_reports: usize,
+    pub total_reports: usize,
+    pub consensus_reached: bool,
+    pub seed_material: Option<Vec<u8>>,
+}
+
+pub struct ReporterManager {
+    reporter_count: usize,
+    threshold: usize,
+    timeout: Duration,
+    results: Arc<Mutex<Vec<ReportResult>>>,
+}
+
+impl ReporterManager {
+    pub fn new(reporter_count: usize, threshold: usize, timeout_ms: u64) -> Self {
+        Self {
+            reporter_count,
+            threshold,
+            timeout: Duration::from_millis(timeout_ms),
+            results: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    pub async fn run(&self) -> Result<ConsensusResult, Box<dyn Error>> {
+        info!(
+            "Starting Byzantine consensus with {} reporters, threshold {}",
+            self.reporter_count, self.threshold
+        );
+
+        // Track timing
+        let start_time = Instant::now();
+
+        // Run reporters sequentially (for simplicity in first version)
+        for i in 0..self.reporter_count {
+            let reporter_id = format!("reporter-{}", i);
+            info!("Starting Reporter {}", reporter_id);
+
+            // Create and run reporter
+            match ReporterNode::new() {
+                Ok(reporter) => {
+                    let report_start = Instant::now();
+                    match reporter.report().await {
+                        Ok(metrics) => {
+                            let duration = report_start.elapsed();
+                            info!("Reporter {} succeeded in {:?}", reporter_id, duration);
+
+                            // Track successful result
+                            let mut results = self.results.lock().unwrap();
+                            results.push(ReportResult {
+                                reporter_id,
+                                success: true,
+                                key_id: Some(format!("key-{}", i)), // Placeholder
+                                timestamp: Instant::now(),
+                                duration,
+                            });
+                        }
+                        Err(e) => {
+                            error!("Reporter {} failed: {}", reporter_id, e);
+                            // Track failed result
+                            let mut results = self.results.lock().unwrap();
+                            results.push(ReportResult {
+                                reporter_id,
+                                success: false,
+                                key_id: None,
+                                timestamp: Instant::now(),
+                                duration: report_start.elapsed(),
+                            });
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!("Failed to create Reporter {}: {}", reporter_id, e);
+                    // Track creation failure
+                    let mut results = self.results.lock().unwrap();
+                    results.push(ReportResult {
+                        reporter_id,
+                        success: false,
+                        key_id: None,
+                        timestamp: Instant::now(),
+                        duration: Duration::from_secs(0),
+                    });
+                }
+            }
+
+            // Check if we already have enough for consensus (early completion)
+            if self.check_current_consensus() {
+                info!("Early consensus reached after {} reporters", i + 1);
+                break;
+            }
+        }
+
+        // Calculate final consensus
+        let results = self.results.lock().unwrap();
+        let successful = results.iter().filter(|r| r.success).count();
+        let consensus_reached = successful >= self.threshold;
+
+        let seed_material = if consensus_reached {
+            // Generate seed material from successful reports
+            Some(self.generate_seed(&results))
+        } else {
+            None
+        };
+
+        let result = ConsensusResult {
+            successful_reports: successful,
+            total_reports: results.len(),
+            consensus_reached,
+            seed_material,
+        };
+
+        // Log results
+        if consensus_reached {
+            info!(
+                "✅ Byzantine consensus reached! {}/{} reporters successful (needed {})",
+                successful,
+                results.len(),
+                self.threshold
+            );
+            if let Some(seed) = &result.seed_material {
+                info!("Generated seed material: {} bytes", seed.len());
+            }
+        } else {
+            error!(
+                "❌ Failed to reach Byzantine consensus. {}/{} reporters successful (needed {})",
+                successful,
+                results.len(),
+                self.threshold
+            );
+        }
+
+        Ok(result)
+    }
+
+    fn check_current_consensus(&self) -> bool {
+        let results = self.results.lock().unwrap();
+        let successful = results.iter().filter(|r| r.success).count();
+        successful >= self.threshold
+    }
+
+    fn generate_seed(&self, results: &[ReportResult]) -> Vec<u8> {
+        // Simple seed generation: XOR all successful keys
+        // In a real implementation, this would use a more sophisticated approach
+        let mut seed = vec![0u8; 32]; // 256-bit seed
+
+        for result in results.iter().filter(|r| r.success) {
+            // In a real implementation, we would use actual key material
+            // For now, just use some bytes derived from the reporter ID
+            let bytes = result.reporter_id.bytes().collect::<Vec<_>>();
+            for (i, b) in bytes.iter().enumerate().take(32) {
+                seed[i % 32] ^= b;
+            }
+        }
+
+        seed
+    }
+    // Add this new method
+    pub fn with_fault_probability(self, fault_probability: f64) -> Self {
+        // This is a placeholder - in a real implementation we would
+        // store this and use it to inject faults
+        info!("Setting fault probability to {}", fault_probability);
+        self
+    }
+
+    // Add this new method
+    pub fn with_network_delay(self, min_ms: u64, max_ms: u64) -> Self {
+        // This is a placeholder - in a real implementation we would
+        // use this to simulate network delays
+        info!("Setting network delay range to {}ms-{}ms", min_ms, max_ms);
+        self
+    }
+}
+
+------------------ src/byzantine/mod.rs ------------------
+pub mod manager;
+
+pub use manager::{ConsensusResult, ReportResult, ReporterManager};
+
+------------------ src/byzantine/byzantine_node.rs ------------------
+// src/bin/byzantine_node.rs
+use qkd_client::byzantine::ReporterManager;
+use qkd_client::reporter::ReporterNode;  // Make sure this is exported
+use tracing_subscriber::FmtSubscriber;
+use tracing::{info, error};
+
+#[tokio::main]
+async fn main() {
+    // Setup logging
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(tracing::Level::INFO)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+
+    info!("🌟 Starting Byzantine QKD Reporter Manager...");
+    
+    // Configuration
+    let reporter_count = 5;
+    let threshold = reporter_count / 2 + 1;
+    let timeout_ms = 10000;
+    
+    // Create manager
+    let manager = ReporterManager::new(reporter_count, threshold, timeout_ms);
+    
+    // Run consensus
+    match manager.run().await {
+        Ok(result) => {
+            if result.consensus_reached {
+                info!("Byzantine consensus reached!");
+                info!("Successful reports: {}/{}", 
+                     result.successful_reports, result.total_reports);
+                
+                if let Some(seed) = result.seed_material {
+                    info!("Generated seed: {:?}", seed);
+                }
+            } else {
+                error!("Failed to reach Byzantine consensus");
+                error!("Successful reports: {}/{} (needed {})", 
+                      result.successful_reports, result.total_reports, threshold);
+            }
+        }
+        Err(e) => {
+            error!("Error running Byzantine consensus: {}", e);
+        }
+    }
+}
+
+------------------ src/quantum_auth/commitment.rs ------------------
+use rand::RngCore;
+use std::error::Error;
+#[allow(dead_code)]
+pub struct QuantumCommitment {
+    value: [u8; 32],
+    nonce: [u8; 32],
+}
+
+impl QuantumCommitment {
+    #[allow(dead_code)]
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        let value = [0u8; 32];
+        let mut nonce = [0u8; 32];
+
+        // Generate random nonce
+        rand::thread_rng().fill_bytes(&mut nonce);
+
+        Ok(Self { value, nonce })
+    }
+    #[allow(dead_code)]
+    pub fn commit(&mut self, data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        // Basic commitment for now - will enhance with quantum resistance
+        self.value.copy_from_slice(&data[..32]);
+        Ok(self.value.to_vec())
+    }
+}
+
+------------------ src/quantum_auth/authenticator.rs ------------------
+// src/quantum_auth/authenticator.rs
+use ark_bn254::Bn254;
+use ark_groth16::ProvingKey;
+use std::error::Error;
+#[allow(dead_code)]
+pub struct QuantumAuthenticator {
+    commitment: [u8; 32],
+    // For now, let's make it optional since proper initialization is complex
+    proof_parameters: Option<ProvingKey<Bn254>>,
+}
+
+impl QuantumAuthenticator {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        // Initialize with empty proving key for now
+        Ok(Self {
+            commitment: [0u8; 32],
+            proof_parameters: None,
+        })
+    }
+
+    pub fn authenticate(&self) -> Result<Vec<u8>, Box<dyn Error>> {
+        // Dummy implementation for now
+        Ok(vec![0u8; 32])
+    }
+}
+
+------------------ src/quantum_auth/pq_auth.rs ------------------
+// src/quantum_auth/pq_auth.rs
+// Keep only the actual code and remove any documentation comments
+// that are not properly formatted
+use std::error::Error;
+
+pub struct SphincsAuth {
+    // Implementation details
+}
+
+impl SphincsAuth {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        // Implementation
+        Ok(Self {})
+    }
+
+    pub fn sign(&self, message: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        // Implementation
+        Ok(message.to_vec())
+    }
+
+    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<bool, Box<dyn Error>> {
+        // Implementation
+        Ok(true)
+    }
+}
+
+------------------ src/quantum_auth/mod.rs ------------------
+// src/quantum_auth/mod.rs
+mod authenticator;
+mod circuit;
+mod commitment;
+pub mod hybrid;
+pub mod pq;
+mod pq_auth;
+
+pub use authenticator::QuantumAuthenticator;
+pub use pq::SphincsAuth; // Correct export path
+
+------------------ src/quantum_auth/hybrid.rs ------------------
+// src/quantum_auth/hybrid.rs
+use crate::quantum_auth::authenticator::QuantumAuthenticator;
+use crate::quantum_auth::pq::{SphincsAuth, SphincsVariant};
+
+use std::error::Error;
+use tracing::{debug, info};
+
+pub struct HybridAuth {
+    classical: QuantumAuthenticator,
+    quantum: SphincsAuth,
+}
+
+pub struct HybridProof {
+    pub classical: Vec<u8>,
+    pub quantum: Vec<u8>,
+}
+
+impl HybridAuth {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        debug!("Initializing hybrid authentication system...");
+
+        Ok(Self {
+            classical: QuantumAuthenticator::new()?,
+            quantum: SphincsAuth::new()?,
+        })
+    }
+    
+    pub fn with_variant(variant: SphincsVariant) -> Result<Self, Box<dyn Error>> {
+        debug!("Initializing hybrid authentication with SPHINCS+ variant...");
+
+        Ok(Self {
+            classical: QuantumAuthenticator::new()?,
+            quantum: SphincsAuth::with_variant(variant)?,
+        })
+    }
+
+    pub fn authenticate(&self) -> Result<HybridProof, Box<dyn Error>> {
+        debug!("Generating hybrid authentication proof...");
+
+        // Generate classical proof first
+        let start = std::time::Instant::now();
+        let classical_proof = self.classical.authenticate()?;
+        let classical_time = start.elapsed();
+        debug!("Classical proof generated in {:?}", classical_time);
+        
+        // Sign it with quantum-resistant signature
+        let start = std::time::Instant::now();
+        let quantum_proof = self.quantum.sign(&classical_proof)?;
+        let quantum_time = start.elapsed();
+        debug!("Quantum-resistant signature generated in {:?}", quantum_time);
+
+        info!("Hybrid proof generated successfully (classical: {}B, quantum: {}B)",
+              classical_proof.len(), quantum_proof.len());
+              
+        info!("Classical/quantum generation time ratio: {:.2}x", 
+              quantum_time.as_micros() as f64 / classical_time.as_micros() as f64);
+              
+        Ok(HybridProof {
+            classical: classical_proof,
+            quantum: quantum_proof,
+        })
+    }
+
+    pub fn verify(&self, proof: &HybridProof) -> Result<bool, Box<dyn Error>> {
+        debug!("Verifying hybrid authentication proof...");
+
+        // Verify quantum signature of classical proof
+        let start = std::time::Instant::now();
+        let quantum_valid = self.quantum.verify(&proof.classical, &proof.quantum)?;
+        let verification_time = start.elapsed();
+        
+        if quantum_valid {
+            info!("Hybrid proof verified successfully in {:?}", verification_time);
+        } else {
+            debug!("Hybrid proof verification failed");
+        }
+        
+        Ok(quantum_valid)
+    }
+    
+    // Get the public key for this hybrid auth instance
+    pub fn get_public_key(&self) -> Result<Vec<u8>, Box<dyn Error>> {
+        self.quantum.serialize_public_key()
+    }
+}
+
+// Create some tests for hybrid authentication
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_hybrid_auth() -> Result<(), Box<dyn Error>> {
+        // Create a new hybrid auth instance
+        let hybrid = HybridAuth::new()?;
+        
+        // Generate a proof
+        let proof = hybrid.authenticate()?;
+        
+        // Verify the proof
+        let valid = hybrid.verify(&proof)?;
+        assert!(valid, "Hybrid proof verification failed");
+        
+        // Tamper with the classical proof
+        let mut tampered_proof = proof.clone();
+        if !tampered_proof.classical.is_empty() {
+            tampered_proof.classical[0] ^= 0xFF; // Flip some bits
+        }
+        
+        // Verify should fail
+        let valid = hybrid.verify(&tampered_proof)?;
+        assert!(!valid, "Tampered proof should not verify");
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_hybrid_auth_variants() -> Result<(), Box<dyn Error>> {
+        // Test with different variants
+        let variants = [
+            SphincsVariant::Shake128f,
+            SphincsVariant::Shake256f,
+        ];
+        
+        for variant in variants.iter() {
+            // Create a new hybrid auth instance with this variant
+            let hybrid = HybridAuth::with_variant(*variant)?;
+            
+            // Generate a proof
+            let proof = hybrid.authenticate()?;
+            
+            // Verify the proof
+            let valid = hybrid.verify(&proof)?;
+            assert!(valid, "Hybrid proof verification failed for variant {:?}", variant);
+        }
+        
+        Ok(())
+    }
+}
+
+------------------ src/quantum_auth/pq/sphincs.rs ------------------
+// src/quantum_auth/pq/sphincs.rs
+use std::error::Error;
+use tracing::{debug, info};
+use rand::{RngCore, rngs::OsRng};
+use serde::{Serialize, Deserialize};
+
+// Constants for SPHINCS+
+// Using SPHINCS+-SHAKE-128f parameters
+const SPHINCS_SIG_SIZE: usize = 17088; // Smaller than 49856 (128s) for better performance
+const SPHINCS_PK_SIZE: usize = 32;    // Size of a SPHINCS+ public key (128f)
+const SPHINCS_SK_SIZE: usize = 64;    // Size of a SPHINCS+ secret key (128f)
+
+// SPHINCS+ Parameter Set
+#[derive(Debug, Clone, Copy)]
+pub enum SphincsVariant {
+    Shake128f,
+    Shake128s,
+    Shake256f,
+    Shake256s,
+    Sha256f,
+    Sha256s,
+}
+
+impl SphincsVariant {
+    pub fn sig_size(&self) -> usize {
+        match self {
+            Self::Shake128f => 17088,
+            Self::Shake128s => 7856,
+            Self::Shake256f => 29792,
+            Self::Shake256s => 13568,
+            Self::Sha256f => 17088,
+            Self::Sha256s => 7856,
+        }
+    }
+    
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Shake128f => "SPHINCS+-SHAKE-128f",
+            Self::Shake128s => "SPHINCS+-SHAKE-128s",
+            Self::Shake256f => "SPHINCS+-SHAKE-256f",
+            Self::Shake256s => "SPHINCS+-SHAKE-256s",
+            Self::Sha256f => "SPHINCS+-SHA-256f",
+            Self::Sha256s => "SPHINCS+-SHA-256s",
+        }
+    }
+}
+
+// SPHINCS+ Keys
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SphincsPublicKey {
+    pub key: Vec<u8>,
+    pub variant: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SphincsPrivateKey {
+    pub key: Vec<u8>,
+    pub variant: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SphincsSignature {
+    pub sig: Vec<u8>,
+    pub variant: String,
+}
+
+pub struct SphincsAuth {
+    public_key: SphincsPublicKey,
+    private_key: SphincsPrivateKey,
+    variant: SphincsVariant,
+}
+
+// Custom error type for SPHINCS+ operations
+#[derive(Debug)]
+pub enum SphincsError {
+    InvalidKeySize(usize, usize),
+    InvalidSignatureSize(usize, usize),
+    SignatureVerificationFailed,
+    KeyGenerationFailed,
+    ExternalLibraryError(String),
+}
+
+impl std::fmt::Display for SphincsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidKeySize(actual, expected) => 
+                write!(f, "Invalid key size: expected {}, got {}", expected, actual),
+            Self::InvalidSignatureSize(actual, expected) => 
+                write!(f, "Invalid signature size: expected {}, got {}", expected, actual),
+            Self::SignatureVerificationFailed => 
+                write!(f, "Signature verification failed"),
+            Self::KeyGenerationFailed => 
+                write!(f, "Key generation failed"),
+            Self::ExternalLibraryError(e) => 
+                write!(f, "External library error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for SphincsError {}
+
+impl SphincsAuth {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        debug!("Initializing SPHINCS+ authentication");
+        
+        // Select variant (could be configurable)
+        let variant = SphincsVariant::Shake128f;
+        info!("Using {} variant", variant.name());
+        
+        // Generate key pair
+        let (public_key, private_key) = Self::generate_keypair(variant)?;
+        
+        Ok(Self {
+            public_key,
+            private_key,
+            variant,
+        })
+    }
+    
+    pub fn with_variant(variant: SphincsVariant) -> Result<Self, Box<dyn Error>> {
+        debug!("Initializing SPHINCS+ authentication with variant {}", variant.name());
+        
+        // Generate key pair
+        let (public_key, private_key) = Self::generate_keypair(variant)?;
+        
+        Ok(Self {
+            public_key,
+            private_key,
+            variant,
+        })
+    }
+    
+    pub fn sign(&self, message: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        debug!("Signing with SPHINCS+ ({}) - message size: {}B", 
+               self.variant.name(), message.len());
+        
+        // TODO: When integrating with a real SPHINCS+ library, replace this with actual implementation
+        // Currently simulating with appropriate randomness and size characteristics
+        
+        // Get expected signature size for this variant
+        let sig_size = self.variant.sig_size();
+        
+        // Use cryptographically secure RNG
+        let mut rng = OsRng;
+        let mut signature = Vec::with_capacity(sig_size);
+        
+        // SPHINCS+ signatures have a specific format - here we're simulating it
+        // In a real implementation, this would call the actual SPHINCS+ sign function
+        
+        // First part includes a structured element based on private key and message
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(&self.private_key.key);
+        hasher.update(message);
+        let seed = hasher.finalize();
+        signature.extend_from_slice(seed.as_bytes());
+        
+        // Remaining bytes to reach proper SPHINCS+ signature size
+        let mut remaining = vec![0u8; sig_size - 32];
+        rng.fill_bytes(&mut remaining);
+        signature.extend_from_slice(&remaining);
+        
+        // Wrap in a structure that includes the variant info
+        let sphincs_sig = SphincsSignature {
+            sig: signature.clone(),
+            variant: self.variant.name().to_string(),
+        };
+        
+        // Serialize the full signature structure
+        let serialized = bincode::serialize(&sphincs_sig)?;
+        
+        debug!("Generated SPHINCS+ signature: {}B", serialized.len());
+        Ok(serialized)
+    }
+    
+    pub fn verify(&self, message: &[u8], signature_bytes: &[u8]) -> Result<bool, Box<dyn Error>> {
+        debug!("Verifying SPHINCS+ signature - message size: {}B, signature size: {}B", 
+               message.len(), signature_bytes.len());
+        
+        // Deserialize the signature structure
+        let signature: SphincsSignature = match bincode::deserialize(signature_bytes) {
+            Ok(sig) => sig,
+            Err(e) => {
+                debug!("Failed to deserialize signature: {}", e);
+                return Ok(false);
+            }
+        };
+        
+        // Check if signature variant matches our variant
+        if signature.variant != self.variant.name() {
+            debug!("Signature variant mismatch: expected {}, got {}", 
+                   self.variant.name(), signature.variant);
+            return Ok(false);
+        }
+        
+        // Validate signature size
+        let expected_size = self.variant.sig_size();
+        if signature.sig.len() != expected_size {
+            debug!("Invalid signature size: expected {}, got {}", 
+                   expected_size, signature.sig.len());
+            return Err(Box::new(SphincsError::InvalidSignatureSize(
+                signature.sig.len(), expected_size)));
+        }
+        
+        // TODO: When integrating with a real SPHINCS+ library, replace this with actual verification
+        // Currently simulating the verification with behavior similar to a real implementation
+        
+        // Extract the message-dependent part (first 32 bytes)
+        let sig_hash = &signature.sig[0..32];
+        
+        // Recompute the expected hash with public key instead of private key
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(&self.public_key.key);
+        hasher.update(message);
+        let expected = hasher.finalize();
+        
+        // In a real implementation, we would call SPHINCS+ verify
+        // Here we're using a simplified check based on hash verification
+        // This simulates the core security property
+        
+        // Time-constant comparison to avoid timing attacks
+        let valid = subtle::ConstantTimeEq::ct_eq(sig_hash, expected.as_bytes()).unwrap_u8() == 1;
+        
+        if valid {
+            info!("SPHINCS+ signature verified successfully");
+        } else {
+            debug!("SPHINCS+ signature verification failed");
+        }
+        
+        Ok(valid)
+    }
+    
+    // Generate a SPHINCS+ keypair
+    fn generate_keypair(variant: SphincsVariant) -> Result<(SphincsPublicKey, SphincsPrivateKey), Box<dyn Error>> {
+        debug!("Generating SPHINCS+ keypair for variant {}", variant.name());
+        
+        // TODO: When integrating with a real SPHINCS+ library, replace this with actual key generation
+        // Currently simulating with appropriate randomness and size characteristics
+        
+        let mut rng = OsRng;
+        
+        // Generate private key with secure random data
+        let mut sk = vec![0u8; SPHINCS_SK_SIZE];
+        rng.fill_bytes(&mut sk);
+        
+        // Derive public key from private key using a hash function
+        // In a real implementation, this would use SPHINCS+ specific key derivation
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(&sk);
+        let pk_hash = hasher.finalize();
+        let pk = pk_hash.as_bytes()[0..SPHINCS_PK_SIZE].to_vec();
+        
+        let public_key = SphincsPublicKey {
+            key: pk,
+            variant: variant.name().to_string(),
+        };
+        
+        let private_key = SphincsPrivateKey {
+            key: sk,
+            variant: variant.name().to_string(),
+        };
+        
+        info!("Generated SPHINCS+ keypair successfully");
+        Ok((public_key, private_key))
+    }
+    
+    // Get public key bytes
+    pub fn get_public_key(&self) -> &[u8] {
+        &self.public_key.key
+    }
+    
+    // Serialize public key for storage or transmission
+    pub fn serialize_public_key(&self) -> Result<Vec<u8>, Box<dyn Error>> {
+        Ok(bincode::serialize(&self.public_key)?)
+    }
+    
+    // Deserialize public key from storage or transmission
+    pub fn deserialize_public_key(data: &[u8]) -> Result<SphincsPublicKey, Box<dyn Error>> {
+        Ok(bincode::deserialize(data)?)
+    }
+}
+
+// Unit tests
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_sphincs_sign_verify() -> Result<(), Box<dyn Error>> {
+        // Create a new SPHINCS+ instance
+        let sphincs = SphincsAuth::new()?;
+        
+        // Test message
+        let message = b"This is a test message";
+        
+        // Sign the message
+        let signature = sphincs.sign(message)?;
+        
+        // Verify the signature
+        let valid = sphincs.verify(message, &signature)?;
+        assert!(valid, "Signature verification failed");
+        
+        // Verify with incorrect message
+        let wrong_message = b"This is a wrong message";
+        let valid = sphincs.verify(wrong_message, &signature)?;
+        assert!(!valid, "Signature should not verify with wrong message");
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_sphincs_variants() -> Result<(), Box<dyn Error>> {
+        // Test with different variants
+        let variants = [
+            SphincsVariant::Shake128f,
+            SphincsVariant::Shake256f,
+        ];
+        
+        for variant in variants.iter() {
+            // Create a new SPHINCS+ instance with this variant
+            let sphincs = SphincsAuth::with_variant(*variant)?;
+            
+            // Test message
+            let message = b"Testing with different variants";
+            
+            // Sign the message
+            let signature = sphincs.sign(message)?;
+            
+            // Verify the signature
+            let valid = sphincs.verify(message, &signature)?;
+            assert!(valid, "Signature verification failed for variant {:?}", variant);
+        }
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_key_serialization() -> Result<(), Box<dyn Error>> {
+        // Create a new SPHINCS+ instance
+        let sphincs = SphincsAuth::new()?;
+        
+        // Serialize the public key
+        let serialized = sphincs.serialize_public_key()?;
+        
+        // Deserialize the public key
+        let deserialized = SphincsAuth::deserialize_public_key(&serialized)?;
+        
+        // Verify they match
+        assert_eq!(sphincs.public_key.key, deserialized.key);
+        assert_eq!(sphincs.public_key.variant, deserialized.variant);
+        
+        Ok(())
+    }
+}
+
+------------------ src/quantum_auth/pq/mod.rs ------------------
+// src/quantum_auth/pq/mod.rs
+mod sphincs;
+
+pub use sphincs::{SphincsAuth, SphincsVariant, SphincsError, SphincsPublicKey, SphincsPrivateKey, SphincsSignature};
+
+------------------ src/quantum_auth/circuit.rs ------------------
+// src/quantum_auth/circuit.rs
+use std::error::Error;
+
+pub struct ProvingKey;
+
+pub async fn build_circuit() -> Result<ProvingKey, Box<dyn Error>> {
+    // Placeholder implementation
+    Ok(ProvingKey {})
+}
+

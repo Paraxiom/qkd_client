@@ -1,0 +1,81 @@
+.
+├── Cargo.toml
+├── circuits
+│   ├── input.json
+│   ├── key_verification_0000.zkey
+│   ├── key_verification_0001.zkey
+│   ├── key_verification.circom
+│   ├── key_verification_js
+│   │   ├── generate_witness.js
+│   │   ├── key_verification.wasm
+│   │   └── witness_calculator.js
+│   ├── key_verification.r1cs
+│   ├── key_verification.sym
+│   ├── pot12_0000.ptau
+│   ├── pot12_0001.ptau
+│   ├── pot12_final.ptau
+│   ├── proof.json
+│   ├── proof_to_verify.json
+│   ├── public.json
+│   ├── verification_key.json
+│   └── witness.wtns
+├── doc
+│   ├── overview2.dot
+│   ├── overview.dot
+│   └── overview.png
+├── key_proof_js
+│   ├── generate_witness.js
+│   ├── key_proof.wasm
+│   └── witness_calculator.js
+├── key_proof.r1cs
+├── key_proof.sym
+└── src
+    ├── bin
+    │   ├── byzantine_demo.rs
+    │   ├── byzantine_scenarios.rs
+    │   ├── byzantine_simulation.rs
+    │   ├── byzantine_simulator.rs
+    │   ├── enhanced_client.rs
+    │   ├── hybrid_auth
+    │   ├── hybrid_example.rs
+    │   ├── mod.rs
+    │   ├── multi_reporter.rs
+    │   ├── setup_main.rs
+    │   ├── sphincs_demo.rs
+    │   ├── sphincs_real_demo.rs
+    │   └── sphincs_real.rs
+    ├── byzantine
+    │   ├── buffer.rs
+    │   ├── byzantine_node.rs
+    │   ├── consensus.rs
+    │   ├── manager.rs
+    │   └── mod.rs
+    ├── lib.rs
+    ├── main.rs
+    ├── quantum_auth
+    │   ├── authenticator.rs
+    │   ├── circuit.rs
+    │   ├── commitment.rs
+    │   ├── hybrid.rs
+    │   ├── mod.rs
+    │   ├── pq
+    │   │   ├── mod.rs
+    │   │   └── sphincs.rs
+    │   └── pq_auth.rs
+    ├── reporter
+    │   ├── benchmark.rs
+    │   ├── key_proof.rs
+    │   ├── metrics.rs
+    │   ├── mod.rs
+    │   └── qkd_client.rs
+    ├── shared
+    │   ├── buffer.rs
+    │   └── mod.rs
+    └── zk
+        ├── circuit.rs
+        ├── mod.rs
+        ├── my_circuit.rs
+        ├── proof.rs
+        └── quantum_id.rs
+
+13 directories, 66 files

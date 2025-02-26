@@ -1,15 +1,15 @@
 // src/reporter/mod.rs
-mod qkd_client;
 mod key_proof;
 mod metrics;
+mod qkd_client;
 
-pub use qkd_client::QKDClient;
 pub use key_proof::ProofGenerator;
 pub use metrics::ReporterMetrics;
+pub use qkd_client::QKDClient;
 
-use std::time::Instant;
 use std::error::Error;
-use tracing::{info, error, debug};
+use std::time::Instant;
+use tracing::{debug, error, info};
 
 pub struct ReporterNode {
     qkd_client: QKDClient,
@@ -47,9 +47,12 @@ impl ReporterNode {
         let start = Instant::now();
         let verified = proof.verify()?;
         metrics.verification_time = start.elapsed();
-        
+
         if verified {
-            info!("✅ Proof verified successfully in {:?}", metrics.verification_time);
+            info!(
+                "✅ Proof verified successfully in {:?}",
+                metrics.verification_time
+            );
         } else {
             error!("❌ Proof verification failed");
         }

@@ -1,4 +1,4 @@
-// src/bin/sphincs_real.rs
+// src/bin/sphincs_real_demo.rs
 use qkd_client::quantum_auth::pq::{SphincsAuth, SphincsVariant};
 use std::time::Instant;
 use tracing::{info, Level};
@@ -12,11 +12,10 @@ async fn main() {
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    info!("🌟 SPHINCS+ Quantum-Resistant Signature Demo (Real Implementation)");
-    info!("=================================================================");
+    info!("🌟 SPHINCS+ Quantum-Resistant Signature Demo (pqcrypto)");
+    info!("====================================================");
     info!("This demo uses the real SPHINCS+ implementation from pqcrypto-sphincsplus");
-    info!("(NIST post-quantum cryptography submission)");
-    info!("");
+    info!("(NIST post-quantum cryptography submission)\n");
 
     // Create a new SPHINCS+ instance
     info!("Generating SPHINCS+ keypair... (this may take a moment)");
@@ -89,9 +88,9 @@ async fn main() {
             // Provide a summary
             info!("\n📊 SPHINCS+ Implementation Summary:");
             info!("--------------------------------");
-            info!("✅ Implementation: Real SPHINCS+ (pqcrypto-sphincsplus)");
+            info!("✅ Implementation: pqcrypto-sphincsplus (NIST candidate)");
             info!("✅ Security level: NIST Level 1 (128-bit post-quantum security)");
-            info!("✅ Signature scheme: Stateless hash-based signatures");
+            info!("✅ Signature scheme: Stateless hash-based");
             info!("✅ Pros: Provable security, minimal security assumptions");
             info!("⚠️ Cons: Larger signatures compared to classical schemes");
 

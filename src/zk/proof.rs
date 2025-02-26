@@ -1,10 +1,9 @@
 // src/zk/proof.rs
-use std::error::Error;
-use std::process::Command;
-use serde_json::{json, Value};
 use base64;
+use serde_json::{json, Value};
+use std::error::Error;
 use std::fs;
-use std::path::PathBuf;
+use std::process::Command;
 
 pub struct KeyProof {
     proof: Value,
@@ -14,7 +13,7 @@ pub struct KeyProof {
 impl KeyProof {
     pub async fn new(key_b64: &str) -> Result<Self, Box<dyn Error>> {
         println!("Starting proof generation for key...");
-        
+
         // Decode base64 key
         let key_bytes = base64::decode(key_b64)?;
         println!("Key bytes length: {}", key_bytes.len());
@@ -22,7 +21,9 @@ impl KeyProof {
         // Get current directory and set paths
         let current_dir = std::env::current_dir()?;
         let circuits_dir = current_dir.join("circuits");
-        let wasm_path = circuits_dir.join("key_verification_js").join("key_verification.wasm");
+        let wasm_path = circuits_dir
+            .join("key_verification_js")
+            .join("key_verification.wasm");
         let input_path = circuits_dir.join("input.json");
         let witness_path = circuits_dir.join("witness.wtns");
         let zkey_path = circuits_dir.join("key_verification_0001.zkey");
@@ -57,7 +58,7 @@ impl KeyProof {
                 "calculate",
                 wasm_path.to_str().unwrap(),
                 input_path.to_str().unwrap(),
-                witness_path.to_str().unwrap()
+                witness_path.to_str().unwrap(),
             ])
             .status()?;
 
@@ -75,7 +76,7 @@ impl KeyProof {
                 zkey_path.to_str().unwrap(),
                 witness_path.to_str().unwrap(),
                 proof_path.to_str().unwrap(),
-                public_path.to_str().unwrap()
+                public_path.to_str().unwrap(),
             ])
             .status()?;
 
@@ -98,7 +99,7 @@ impl KeyProof {
 
     pub fn verify(&self) -> Result<bool, Box<dyn Error>> {
         println!("Starting proof verification...");
-        
+
         // Get paths
         let current_dir = std::env::current_dir()?;
         let circuits_dir = current_dir.join("circuits");
@@ -119,7 +120,7 @@ impl KeyProof {
                 "verify",
                 vkey_path.to_str().unwrap(),
                 public_path.to_str().unwrap(),
-                proof_verify_path.to_str().unwrap()
+                proof_verify_path.to_str().unwrap(),
             ])
             .output()?;
 

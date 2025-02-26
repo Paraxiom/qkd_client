@@ -3,7 +3,6 @@ use ark_groth16::Groth16;
 use ark_snark::SNARK;
 use qkd_client::zk::circuit::build_test_circuit;
 use rand::thread_rng;
-use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() {

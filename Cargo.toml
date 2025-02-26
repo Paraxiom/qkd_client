@@ -42,12 +42,19 @@ tokio = { version = "1", features = ["full"] }
 tracing-subscriber = "0.3.19"
 tracing = "0.1"
 wasmtime = "12.0"
+# Post-quantum crypto
+pqcrypto-traits = "0.3.4"
+pqcrypto-sphincsplus = "0.7.0"
+# Classical crypto for hybrid authentication
+ring = "0.16.20"
+
 [dev-dependencies]
 criterion = { version = "0.4", features = ["async_tokio"] }
 
 #[[bench]]
 #name = "reporter_benchmarks"
 #harness = false
+
 [profile.release]
 opt-level = 3
 lto = true
