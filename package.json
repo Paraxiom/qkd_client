@@ -1,0 +1,26 @@
+{
+  "name": "qkd_client",
+  "version": "1.0.0",
+  "description": "QKD Client (Rust + PKCS#12 + CA) This repository demonstrates how to securely request keys from a QKD server (or other quantum-safe endpoint) using PKCS#12-based client certificates in Rust. The implementation includes JSON response parsing for key retrieval (e.g., key_ID, key). Overview The client connects to a KMS or QKD endpoint at https://<ip>/api/v1/keys/... using mutual TLS authentication with client certificates. Security Considerations",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Paraxiom/qkd_client.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Paraxiom/qkd_client/issues"
+  },
+  "homepage": "https://github.com/Paraxiom/qkd_client#readme",
+  "dependencies": {
+    "circomlib": "^2.0.5"
+  }
+}
