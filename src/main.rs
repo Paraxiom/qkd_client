@@ -2,7 +2,8 @@
 mod quantum_auth;
 mod reporter;
 mod zk;
-
+mod byzantine;
+mod vrf;
 use reporter::ReporterNode;
 use tracing_subscriber::FmtSubscriber;
 

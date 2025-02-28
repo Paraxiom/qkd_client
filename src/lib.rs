@@ -3,3 +3,4 @@ pub mod byzantine;
 pub mod quantum_auth;
 pub mod reporter;
 pub mod zk;
+pub mod vrf;

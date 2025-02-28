@@ -7,7 +7,8 @@ use ark_bn254::{Fr, Bn254};
 use ark_groth16::{Groth16, Proof};
 use ark_snark::SNARK;
 use tracing::{debug, info};
-
+use ark_std::UniformRand;
+use ark_ff::BigInteger;
 /// VRF (Verifiable Random Function) implementation
 /// This creates a deterministic but unpredictable value from a ZK proof seed
 pub struct VerifiableRandomFunction {
@@ -44,8 +45,7 @@ impl VerifiableRandomFunction {
     /// Generate a random value in the range [0, max)
     pub fn generate_range(&self, max: u64) -> Result<u64, Box<dyn Error>> {
         let bytes = self.generate_bytes(8)?;
-        let value = u64::from_le_bytes(bytes.try_into()?);
-        
+        let value = u64::from_le_bytes(bytes.try_into().map_err(|_| "Invalid byte length for u64 conversion".to_string())?); 
         // Modulo to get value in range
         Ok(value % max)
     }
@@ -64,7 +64,7 @@ impl VerifiableRandomFunction {
         let mut result = Vec::with_capacity(count);
         for _ in 0..count {
             let fr = Fr::rand(&mut rng);
-            let bytes = fr.into_repr().to_bytes_le();
+            let bytes = fr.into_bigint().to_bytes_le();
             result.extend_from_slice(&bytes[0..1]); // Take first byte for simplicity
         }
         

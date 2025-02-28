@@ -5,6 +5,9 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, warn};
 
+#[derive(Debug, Clone)]
+pub struct TestImport;
+
 /// Message types for Byzantine consensus
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum MessageType {

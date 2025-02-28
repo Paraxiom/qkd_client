@@ -7,7 +7,10 @@ use std::collections::HashMap;
 use serde_json::{json, Value};
 use tracing::{debug, info};
 
+
 use crate::byzantine::buffer::ReporterEntry;
+
+
 
 // Represents a proof for multiple quantum sources
 pub struct MultiSourceKeyProof {
@@ -46,7 +49,7 @@ impl MultiSourceKeyProof {
         let public_path = circuits_dir.join("multi_source_public.json");
         
         // Create input file
-        let input = self::prepare_input_file(sources, threshold, nonce)?;
+        let input = Self::prepare_input_file(sources, (threshold as u64).try_into().unwrap(), nonce)?;
         fs::write(&input_path, input.to_string())?;
         debug!("Created multi-source input file at {:?}", input_path);
 

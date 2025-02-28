@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
         
         // Add to buffer
-        generator.add_report(reporter);
+        generator.add_report(reporter.clone());
         info!("Added reporter: {}", reporter.reporter_id);
     }
     
