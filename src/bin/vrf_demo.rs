@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     println!("VRF Output: {}", hex::encode(&response.output[0..16]));
     println!("VRF Proof Size: {} bytes", response.vrf_proof.len());
-    println!("ZK Proof Size: {} bytes", response.zk_proof.len());
+    println!("VRF Proof Size: {} bytes", response.vrf_proof.len());
     println!("Generation Time: {:?}", elapsed);
 
     // Verify the output

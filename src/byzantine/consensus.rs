@@ -74,18 +74,15 @@ impl Clone for ByzantineConsensus {
         // In a real implementation, you would properly clone all fields
         let view = *self.view.lock().unwrap();
         let sequence = *self.sequence.lock().unwrap();
-        
+
         // Create a new instance with the same configuration
-        let consensus = Self::new(
-            &self.node_id, 
-            Arc::clone(&self.buffer), 
-            self.config.clone()
-        ).unwrap_or_else(|_| panic!("Failed to clone consensus instance"));
-        
+        let consensus = Self::new(&self.node_id, Arc::clone(&self.buffer), self.config.clone())
+            .unwrap_or_else(|_| panic!("Failed to clone consensus instance"));
+
         // Set the view and sequence to match the original
         *consensus.view.lock().unwrap() = view;
         *consensus.sequence.lock().unwrap() = sequence;
-        
+
         consensus
     }
 }

@@ -1,9 +1,9 @@
 // src/main.rs
+mod byzantine;
 mod quantum_auth;
 mod reporter;
-mod zk;
-mod byzantine;
 mod vrf;
+mod zk;
 use reporter::ReporterNode;
 use tracing_subscriber::FmtSubscriber;
 

@@ -2,10 +2,10 @@
 mod authenticator;
 mod circuit;
 mod commitment;
+pub mod hybrid;
 pub mod pq;
 mod pq_auth;
-pub mod hybrid;   
-pub use hybrid::HybridAuth;  
+pub use hybrid::HybridAuth;
 
 pub use authenticator::QuantumAuthenticator;
-pub use pq::SphincsAuth; // Correct export path
+pub use pq::SphincsAuth;

@@ -12,6 +12,7 @@ use ring::signature::{self, Ed25519KeyPair, KeyPair, Signature};
 /// A hybrid authentication system that combines classical Ed25519 signatures
 /// with quantum-resistant SPHINCS+ signatures for maximum security during
 /// the transition to post-quantum cryptography.
+
 pub struct HybridAuth {
     classical_keypair: Ed25519KeyPair,
     quantum_auth: SphincsAuth,
@@ -19,7 +20,7 @@ pub struct HybridAuth {
 
 #[derive(Debug, Clone)]
 pub struct HybridProof {
-    pub classical: Vec<u8>,  // ✅ Just a field definition
+    pub classical: Vec<u8>, // ✅ Just a field definition
     pub quantum: Vec<u8>,
 }
 
@@ -188,18 +189,18 @@ impl HybridAuth {
             .map_err(|e| e.into())
     }
     pub fn authenticate(&self) -> Result<HybridProof, Box<dyn Error>> {
-    debug!("Generating hybrid authentication proof...");
+        debug!("Generating hybrid authentication proof...");
 
-    let classical_proof = self.classical_keypair.sign(b"Hybrid Authentication");
-    let classical_proof_bytes = classical_proof.as_ref().to_vec();  // ✅ Convert Signature to Vec<u8>
+        let classical_proof = self.classical_keypair.sign(b"Hybrid Authentication");
+        let classical_proof_bytes = classical_proof.as_ref().to_vec(); // ✅ Convert Signature to Vec<u8>
 
-    let quantum_proof = self.quantum_auth.sign(&classical_proof_bytes)?;
+        let quantum_proof = self.quantum_auth.sign(&classical_proof_bytes)?;
 
-    Ok(HybridProof {
-        classical: classical_proof_bytes,  // ✅ Now matches the struct field type
-        quantum: quantum_proof,
-    })
-}
+        Ok(HybridProof {
+            classical: classical_proof_bytes, // ✅ Now matches the struct field type
+            quantum: quantum_proof,
+        })
+    }
 
     /// Generate Ed25519 keypair for classical signatures
     fn generate_ed25519_keypair() -> Result<Ed25519KeyPair, Box<dyn Error>> {

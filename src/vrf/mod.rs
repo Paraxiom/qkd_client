@@ -1,7 +1,7 @@
-pub mod integrated;
 pub mod core;
-use std::vec;
+pub mod integrated;
 use ark_std::error::Error;
+use std::vec;
 // src/vrf/mod.rs
 use crate::quantum_auth::hybrid::HybridSignature;
 use sha3::{Digest, Sha3_512};
@@ -17,7 +17,11 @@ impl QuantumVRF {
     }
 
     // Generate a random value and proof based on quantum key input
-    pub fn generate(&self, input: &[u8], quantum_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
+    pub fn generate(
+        &self,
+        input: &[u8],
+        quantum_key: &[u8],
+    ) -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
         // Combine input with quantum key to create seed
         let mut hasher = Sha3_512::new();
         hasher.update(input);
@@ -25,7 +29,7 @@ impl QuantumVRF {
         let seed = hasher.finalize();
 
         // 🔹 Quantum-Safe Signing Placeholder (Replace with SPHINCS+, Falcon, or other PQC)
-        let signature = vec![0u8; 64];  // Placeholder: Replace with actual quantum signature
+        let signature = vec![0u8; 64]; // Placeholder: Replace with actual quantum signature
 
         // Hash the signature to get the random output
         let mut output_hasher = Sha3_512::new();
@@ -36,7 +40,13 @@ impl QuantumVRF {
     }
 
     // Verify a VRF output with its proof
-    pub fn verify(&self, input: &[u8], output: &[u8], proof: &[u8], quantum_key: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
+    pub fn verify(
+        &self,
+        input: &[u8],
+        output: &[u8],
+        proof: &[u8],
+        quantum_key: &[u8],
+    ) -> Result<bool, Box<dyn std::error::Error>> {
         // Recreate the seed
         let mut hasher = Sha3_512::new();
         hasher.update(input);
