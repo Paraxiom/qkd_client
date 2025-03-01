@@ -47,6 +47,7 @@ pub struct SphincsSignature {
     pub variant: String,
 }
 
+#[derive(Clone)]
 pub struct SphincsAuth {
     public_key: sphincssha2128fsimple::PublicKey,
     private_key: sphincssha2128fsimple::SecretKey,

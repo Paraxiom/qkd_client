@@ -113,10 +113,10 @@ diff --git a/circuits/multi_source_witness.wtns b/circuits/multi_source_witness.
 index e69de29..f1c03f9 100644
 Binary files a/circuits/multi_source_witness.wtns and b/circuits/multi_source_witness.wtns differ
 diff --git a/diff.txt b/diff.txt
-index 8c41535..af37204 100644
+index 8c41535..c4efe7c 100644
 --- a/diff.txt
 +++ b/diff.txt
-@@ -1,4141 +0,0 @@
+@@ -1,4141 +1,2285 @@
 -diff --git a/circuits/pot12_0001.ptau b/circuits/pot12_0001.ptau
 -index 3bd704a..46cbdab 100644
 -Binary files a/circuits/pot12_0001.ptau and b/circuits/pot12_0001.ptau differ
@@ -4258,6 +4258,2291 @@ index 8c41535..af37204 100644
 --             ])
 --             .output()?;
 -- 
++diff --git a/src/bin/benchmark_optimizations.rs b/src/bin/benchmark_optimizations.rs
++index ae5541a..33fa4e3 100644
++--- a/src/bin/benchmark_optimizations.rs
+++++ b/src/bin/benchmark_optimizations.rs
++@@ -1,63 +1,114 @@
++-// src/bin/benchmark_optimizations.rs
++-use qkd_client::quantum_auth::pq::sphincs::SphincsAuth;
+++use qkd_client::byzantine::vrf_consensus::VRFBasedConsensus;
+++use qkd_client::quantum_auth::hybrid::HybridAuth;
+++use qkd_client::vrf::core::QuantumVRF;
+++use qkd_client::vrf::integrated::IntegratedVRF;
++ use std::error::Error;
++ use std::time::{Duration, Instant};
++ 
++ fn main() -> Result<(), Box<dyn Error>> {
++-    println!("🚀 SPHINCS+ Performance Benchmarks");
++-    println!("==================================");
++-
++-    // Initialize standard SPHINCS+
++-    let sphincs = SphincsAuth::new()?;
++-
++-    // Messages to sign (with some repetition to test caching)
++-    let messages = vec![
++-        b"Message 1".to_vec(),
++-        b"Message 2".to_vec(),
++-        b"Message 3".to_vec(),
++-        b"Message 1".to_vec(), // Repeated
++-        b"Message 2".to_vec(), // Repeated
+++    println!("�� QKD VRF Performance Benchmark");
+++    println!("===============================");
+++
+++    // Test data
+++    let inputs = vec![
+++        b"Input 1: Leader selection for round 1".to_vec(),
+++        b"Input 2: Leader selection for round 2".to_vec(),
+++        b"Input 3: Leader selection for round 3".to_vec(),
+++        b"Input 4: Leader selection for round 4".to_vec(),
+++        b"Input 5: Leader selection for round 5".to_vec(),
++     ];
++ 
++-    // Benchmark SPHINCS+ signing
++-    println!("SPHINCS+ signing performance:");
++-    let mut durations = Vec::new();
++-    for message in &messages {
+++    let quantum_key = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+++
+++    // Initialize auth for VRF
+++    println!("\n📊 Initializing authentication system...");
+++    let start = Instant::now();
+++    let auth = HybridAuth::new()?;
+++    let auth_init_time = start.elapsed();
+++    println!("  Auth initialization time: {:?}", auth_init_time);
+++
+++    // Benchmark core VRF implementation
+++    println!("\n📊 Benchmarking Core VRF...");
+++    // Create a new HybridAuth instance instead of cloning
+++    let vrf = QuantumVRF::new(HybridAuth::new()?);
+++
+++    let mut generation_times = Vec::new();
+++    let mut verification_times = Vec::new();
+++    let mut proofs = Vec::new();
+++    let mut outputs = Vec::new();
+++
+++    for input in &inputs {
+++        // Generate
+++        let start = Instant::now();
+++        let (output, proof) = vrf.generate(input, &quantum_key)?;
+++        let gen_time = start.elapsed();
+++        generation_times.push(gen_time);
+++        proofs.push(proof);
+++        outputs.push(output);
+++
+++        println!(
+++            "  Generated VRF for input {} in {:?}",
+++            String::from_utf8_lossy(&input[0..20]),
+++            gen_time
+++        );
+++    }
+++
+++    // Verify
+++    for (i, input) in inputs.iter().enumerate() {
++         let start = Instant::now();
++-        let signature = sphincs.sign(message)?;
++-        let duration = start.elapsed();
++-        durations.push(duration);
+++        let valid = vrf.verify(input, &outputs[i], &proofs[i], &quantum_key)?;
+++        let verify_time = start.elapsed();
+++        verification_times.push(verify_time);
+++
++         println!(
++-            "  Message: {:?}, Duration: {:?}",
++-            String::from_utf8_lossy(message),
++-            duration
+++            "  Verified VRF for input {} in {:?} - Result: {}",
+++            String::from_utf8_lossy(&input[0..20]),
+++            verify_time,
+++            if valid { "✅" } else { "❌" }
++         );
++     }
++ 
++-    // Calculate average performance
++-    let avg_duration = durations.iter().sum::<Duration>() / durations.len() as u32;
++-    println!("\nAverage signing time: {:?}", avg_duration);
+++    // Summarize
+++    let avg_gen = generation_times.iter().sum::<Duration>() / generation_times.len() as u32;
+++    let avg_verify = verification_times.iter().sum::<Duration>() / verification_times.len() as u32;
+++    let avg_proof_size = proofs.iter().map(|p| p.len()).sum::<usize>() / proofs.len();
+++
+++    println!("\n📈 Core VRF Performance Summary:");
+++    println!("  Average generation time: {:?}", avg_gen);
+++    println!("  Average verification time: {:?}", avg_verify);
+++    println!("  Average proof size: {} bytes", avg_proof_size);
+++
+++    // Benchmark Byzantine VRF Consensus
+++    println!("\n📊 Benchmarking Byzantine VRF Consensus...");
++ 
++-    // Benchmark verification
++-    println!("\nSPHINCS+ verification performance:");
++-    let mut verify_durations = Vec::new();
++-    for (i, message) in messages.iter().enumerate() {
++-        let signature = sphincs.sign(message)?;
+++    // Setup participants
+++    let participants = vec![10, 20, 30, 40, 50];
+++    let node_id = 1;
+++
+++    // Create the consensus
+++    let integrated_vrf = IntegratedVRF::new(auth);
+++    let consensus = VRFBasedConsensus::new(integrated_vrf, node_id, quantum_key.clone());
+++
+++    // Benchmark leader selection
+++    let mut selection_times = Vec::new();
+++    let mut leaders = Vec::new();
+++
+++    for round in 1..6 {
++         let start = Instant::now();
++-        let valid = sphincs.verify(message, &signature)?;
++-        let duration = start.elapsed();
++-        verify_durations.push(duration);
+++        let leader = consensus.select_leader(round, &participants)?;
+++        let selection_time = start.elapsed();
+++        selection_times.push(selection_time);
+++        leaders.push(leader);
+++
++         println!(
++-            "  Message: {:?}, Valid: {}, Duration: {:?}",
++-            String::from_utf8_lossy(message),
++-            valid,
++-            duration
+++            "  Selected leader {} for round {} in {:?}",
+++            leader, round, selection_time
++         );
++     }
++ 
++-    // Calculate average verification performance
++-    let avg_verify = verify_durations.iter().sum::<Duration>() / verify_durations.len() as u32;
++-    println!("\nAverage verification time: {:?}", avg_verify);
+++    let avg_selection = selection_times.iter().sum::<Duration>() / selection_times.len() as u32;
+++    println!("\n📈 Byzantine VRF Consensus Performance Summary:");
+++    println!("  Average leader selection time: {:?}", avg_selection);
++ 
++     Ok(())
++ }
++diff --git a/src/bin/byzantine_simulator.rs b/src/bin/byzantine_simulator.rs
++index e4bc681..a1ca409 100644
++--- a/src/bin/byzantine_simulator.rs
+++++ b/src/bin/byzantine_simulator.rs
++@@ -1,12 +1,12 @@
++ // src/bin/byzantine_simulator.rs
+++use qkd_client::byzantine::buffer::SharedBuffer;
+++use qkd_client::byzantine::consensus::{ByzantineConsensus, ConsensusConfig};
+++use std::collections::HashMap;
++ use std::sync::Arc;
++ use std::time::Instant;
++-use std::collections::HashMap;
++ use tokio::time::Duration;
++-use tracing::{info, warn, error, Level};
+++use tracing::{error, info, warn, Level};
++ use tracing_subscriber::FmtSubscriber;
++-use qkd_client::byzantine::buffer::SharedBuffer;
++-use qkd_client::byzantine::consensus::{ByzantineConsensus, ConsensusConfig};
++ 
++ #[tokio::main]
++ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++@@ -18,14 +18,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++ 
++     info!("🌟 Byzantine Consensus Simulator");
++     info!("===============================");
++-    
+++
++     // Configuration
++     let node_count = 4; // 3f+1 where f=1 (can tolerate 1 faulty node)
++     let rounds = 3;
++-    
+++
++     // Create shared buffer
++     let buffer = SharedBuffer::new(1000);
++-    
+++
++     // Create consensus config
++     let config = ConsensusConfig {
++         node_count,
++@@ -34,14 +34,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++         round_timeout: Duration::from_secs(20),
++         max_rounds: 5,
++     };
++-    
+++
++     info!("Byzantine Consensus Configuration:");
++     info!("  Nodes: {}", node_count);
++     info!("  Fault Tolerance: {}", config.fault_tolerance);
++     info!("  View Timeout: {:?}", config.view_timeout);
++     info!("  Round Timeout: {:?}", config.round_timeout);
++     info!("");
++-    
+++
++     // Create consensus instances
++     let mut nodes = HashMap::new();
++     for i in 0..node_count {
++@@ -50,46 +50,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++             Ok(consensus) => {
++                 nodes.insert(node_id.clone(), consensus);
++                 info!("Created node: {}", node_id);
++-            },
+++            }
++             Err(e) => {
++                 error!("Failed to create node {}: {}", node_id, e);
++                 return Err(e);
++             }
++         }
++     }
++-    
+++
++     // Run consensus rounds
++     for round in 1..=rounds {
++         info!("\n=== Starting Consensus Round {} ===", round);
++         let start = Instant::now();
++-        
+++
++         // Determine primary for current round
++         let primary_id = format!("node{}", (round - 1) % node_count);
++         info!("Primary node for round {}: {}", round, primary_id);
++-        
+++
++         // Primary proposes a value
++         let value = format!("Value for round {}", round).into_bytes();
++         if let Some(primary) = nodes.get(&primary_id) {
++             match primary.start_consensus(value.clone()) {
++-                Ok(_) => info!("Primary proposed value: {:?}", String::from_utf8_lossy(&value)),
+++                Ok(_) => info!(
+++                    "Primary proposed value: {:?}",
+++                    String::from_utf8_lossy(&value)
+++                ),
++                 Err(e) => {
++                     error!("Primary failed to propose: {}", e);
++                     continue;
++                 }
++             }
++         }
++-        
+++
++         // Each node runs consensus
++         let mut join_handles = Vec::new();
++         for (node_id, consensus) in &nodes {
++             let node_id = node_id.clone();
++             let consensus = consensus.clone();
++-            
+++
++             // Skip primary (it started the consensus)
++             if node_id == primary_id {
++                 continue;
++             }
++-            
+++
++             // Run consensus in a separate thread
++             let handle = tokio::spawn(async move {
++                 info!("Node {} starting consensus", node_id);
++@@ -105,21 +108,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++                             warn!("❌ Node {} failed to reach consensus", node_id);
++                             (node_id, false, result.round_duration)
++                         }
++-                    },
+++                    }
++                     Err(e) => {
++                         error!("❌ Node {} error: {}", node_id, e);
++                         (node_id, false, Duration::from_secs(0))
++                     }
++                 }
++             });
++-            
+++
++             join_handles.push(handle);
++         }
++-        
+++
++         // Wait for all nodes to complete
++         let mut successful_nodes = 0;
++         let mut total_duration = Duration::from_secs(0);
++-        
+++
++         for handle in join_handles {
++             if let Ok((node_id, success, duration)) = handle.await {
++                 if success {
++@@ -128,30 +131,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++                 }
++             }
++         }
++-        
+++
++         // Round summary
++         let round_time = start.elapsed();
++         info!("\n=== Round {} Summary ===", round);
++         info!("Total time: {:?}", round_time);
++         info!("Successful nodes: {}/{}", successful_nodes, node_count - 1); // Exclude primary
++-        
+++
++         let required_nodes = 2 * config.fault_tolerance + 1;
++-        if successful_nodes >= required_nodes - 1 { // -1 because primary isn't counted
+++        if successful_nodes >= required_nodes - 1 {
+++            // -1 because primary isn't counted
++             info!("✅ Round {} achieved consensus", round);
++         } else {
++             warn!("❌ Round {} failed to achieve consensus", round);
++         }
++-        
+++
++         // Average consensus time
++         if successful_nodes > 0 {
++             let avg_duration = total_duration / successful_nodes as u32;
++             info!("Average consensus time: {:?}", avg_duration);
++         }
++-        
+++
++         // Wait between rounds
++         tokio::time::sleep(Duration::from_secs(2)).await;
++     }
++-    
+++
++     // Final statistics
++     let stats = buffer.get_stats();
++     info!("\n=== Final Statistics ===");
++@@ -160,7 +164,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++     for (msg_type, count) in &stats.messages_by_type {
++         info!("  {:?}: {}", msg_type, count);
++     }
++-    
+++
++     // Buffer message age
++     if let Some(oldest) = stats.oldest_message_age {
++         info!("Oldest message: {:?}", oldest);
++@@ -168,6 +172,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++     if let Some(newest) = stats.newest_message_age {
++         info!("Newest message: {:?}", newest);
++     }
++-    
+++
++     Ok(())
++ }
++diff --git a/src/bin/hybrid_auth_demo.rs b/src/bin/hybrid_auth_demo.rs
++index e7a5f33..85bcde6 100644
++--- a/src/bin/hybrid_auth_demo.rs
+++++ b/src/bin/hybrid_auth_demo.rs
++@@ -22,30 +22,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++     let start = Instant::now();
++     match HybridAuth::new() {
++         Ok(auth) => {
++-            info!("✅ Hybrid authentication initialized in {:?}", start.elapsed());
++-            
+++            info!(
+++                "✅ Hybrid authentication initialized in {:?}",
+++                start.elapsed()
+++            );
+++
++             // Display key info
++-            info!("Classical public key size: {} bytes", auth.get_classical_public_key().len());
++-            info!("Quantum public key size: {} bytes", auth.get_quantum_public_key().len());
++-            
+++            info!(
+++                "Classical public key size: {} bytes",
+++                auth.get_classical_public_key().len()
+++            );
+++            info!(
+++                "Quantum public key size: {} bytes",
+++                auth.get_quantum_public_key().len()
+++            );
+++
++             // Test with different message sizes
++             let message_sizes = [32, 256, 1024, 4096];
++-            
+++
++             for size in message_sizes {
++                 // Create test message of this size
++                 let message: Vec<u8> = (0..size).map(|i| (i % 256) as u8).collect();
++                 info!("\nTesting with message size: {} bytes", size);
++-                
+++
++                 // Sign the message
++                 let start = Instant::now();
++                 match auth.sign(&message) {
++                     Ok(signature) => {
++                         let sign_time = start.elapsed();
++                         info!("✅ Hybrid signature generated in {:?}", sign_time);
++-                        info!("   Classical signature: {} bytes", signature.classical.len());
+++                        info!(
+++                            "   Classical signature: {} bytes",
+++                            signature.classical.len()
+++                        );
++                         info!("   Quantum signature: {} bytes", signature.quantum.len());
++-                        info!("   Total size: {} bytes", signature.classical.len() + signature.quantum.len());
++-                        
+++                        info!(
+++                            "   Total size: {} bytes",
+++                            signature.classical.len() + signature.quantum.len()
+++                        );
+++
++                         // Verify the signature
++                         let start = Instant::now();
++                         match auth.verify(&message, &signature) {
++@@ -60,22 +75,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++                                 info!("❌ Error during verification: {}", e);
++                             }
++                         }
++-                        
+++
++                         // Test serialization
++                         match HybridAuth::serialize_signature(&signature) {
++                             Ok(serialized) => {
++                                 info!("   Serialized signature size: {} bytes", serialized.len());
++-                                
+++
++                                 // Test deserialization
++                                 match HybridAuth::deserialize_signature(&serialized) {
++                                     Ok(deserialized) => {
++                                         let start = Instant::now();
++                                         match auth.verify(&message, &deserialized) {
++                                             Ok(true) => {
++-                                                info!("✅ Deserialized signature verified in {:?}", start.elapsed());
+++                                                info!(
+++                                                    "✅ Deserialized signature verified in {:?}",
+++                                                    start.elapsed()
+++                                                );
++                                             }
++                                             Ok(false) => {
++-                                                info!("❌ Deserialized signature verification failed");
+++                                                info!(
+++                                                    "❌ Deserialized signature verification failed"
+++                                                );
++                                             }
++                                             Err(e) => {
++                                                 info!("❌ Error during verification: {}", e);
++@@ -91,20 +111,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++                                 info!("❌ Error during serialization: {}", e);
++                             }
++                         }
++-                        
+++
++                         // Try with tampered message (flip one bit)
++                         let mut tampered = message.clone();
++                         if !tampered.is_empty() {
++                             tampered[0] ^= 0x01;
++                         }
++-                        
+++
++                         let start = Instant::now();
++                         match auth.verify(&tampered, &signature) {
++                             Ok(true) => {
++-                                info!("❌ SECURITY ISSUE: Signature verified with tampered message!");
+++                                info!(
+++                                    "❌ SECURITY ISSUE: Signature verified with tampered message!"
+++                                );
++                             }
++                             Ok(false) => {
++-                                info!("✅ Security check passed: Tampered message rejected in {:?}", start.elapsed());
+++                                info!(
+++                                    "✅ Security check passed: Tampered message rejected in {:?}",
+++                                    start.elapsed()
+++                                );
++                             }
++                             Err(e) => {
++                                 info!("❓ Verification of tampered message error: {}", e);
++@@ -116,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++                     }
++                 }
++             }
++-            
+++
++             // Provide a summary
++             info!("\n📊 Hybrid Authentication Summary:");
++             info!("--------------------------------");
++@@ -125,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++             info!("✅ Combined security: Protected against both classical and quantum attacks");
++             info!("✅ Pros: Full security during transition to post-quantum cryptography");
++             info!("⚠️ Cons: Larger total signature size compared to classical-only");
++-            
+++
++             info!("\n📋 Recommendation for QKD application:");
++             info!("Use hybrid authentication for critical API requests");
++             info!("Store signatures efficiently using binary format rather than Base64");
++@@ -135,6 +160,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++             info!("❌ Error initializing hybrid authentication: {}", e);
++         }
++     }
++-    
+++
++     Ok(())
++ }
++diff --git a/src/bin/hybrid_example.rs b/src/bin/hybrid_example.rs
++index 9bd8ecb..b08b4fa 100644
++--- a/src/bin/hybrid_example.rs
+++++ b/src/bin/hybrid_example.rs
++@@ -14,39 +14,47 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++ 
++     info!("🌟 Hybrid Authentication Example");
++     info!("===============================");
++-    
+++
++     // Create hybrid authentication
++     info!("Initializing hybrid authentication...");
++     let start = Instant::now();
++     let auth = HybridAuth::new()?;
++     info!("✅ Initialization completed in {:?}", start.elapsed());
++-    
+++
++     // Sign a message
++     let message = b"This is a test message for hybrid authentication";
++     info!("Signing message: \"{}\"", String::from_utf8_lossy(message));
++-    
+++
++     let start = Instant::now();
++     let signature = auth.sign(message)?;
++     info!("✅ Signature generated in {:?}", start.elapsed());
++     info!("  Classical signature: {} bytes", signature.classical.len());
++     info!("  Quantum signature: {} bytes", signature.quantum.len());
++-    
+++
++     // Verify the signature
++     let start = Instant::now();
++     let valid = auth.verify(message, &signature)?;
++-    info!("✅ Verification completed in {:?}: {}", start.elapsed(), valid);
++-    
+++    info!(
+++        "✅ Verification completed in {:?}: {}",
+++        start.elapsed(),
+++        valid
+++    );
+++
++     // Serialize for transport
++     let start = Instant::now();
++     let serialized = HybridAuth::serialize_signature(&signature)?;
++-    info!("✅ Serialized in {:?}: {} bytes", start.elapsed(), serialized.len());
++-    
+++    info!(
+++        "✅ Serialized in {:?}: {} bytes",
+++        start.elapsed(),
+++        serialized.len()
+++    );
+++
++     // Deserialize
++     let start = Instant::now();
++     match HybridAuth::deserialize_signature(&serialized) {
++         Ok(deserialized) => {
++             info!("✅ Deserialized in {:?}", start.elapsed());
++-            
+++
++             // Verify deserialized signature
++             let start = Instant::now();
++             let valid = auth.verify(message, &deserialized)?;
++@@ -56,12 +64,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++             warn!("❌ Deserialization error: {}", e);
++         }
++     }
++-    
+++
++     // Try with tampered message
++     let tampered_message = b"This is a tampered message";
++     let start = Instant::now();
++     let valid = auth.verify(tampered_message, &signature)?;
++-    info!("✅ Security check: Tampered message verification: {} (should be false)", valid);
++-    
+++    info!(
+++        "✅ Security check: Tampered message verification: {} (should be false)",
+++        valid
+++    );
+++
++     Ok(())
++ }
++diff --git a/src/bin/multi_source_demo.rs b/src/bin/multi_source_demo.rs
++index aa22561..89ea4d0 100644
++--- a/src/bin/multi_source_demo.rs
+++++ b/src/bin/multi_source_demo.rs
++@@ -4,7 +4,7 @@ use std::time::Instant;
++ use tracing::{info, Level};
++ use tracing_subscriber::FmtSubscriber;
++ 
++-use qkd_client::byzantine::buffer::{SharedBuffer, ReporterEntry};
+++use qkd_client::byzantine::buffer::{ReporterEntry, SharedBuffer};
++ use qkd_client::zk::multi_source_generator::MultiSourceProofGenerator;
++ 
++ #[tokio::main]
++@@ -17,44 +17,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++ 
++     info!("🌟 Multi-Source Quantum Key Proof Demo");
++     info!("======================================");
++-    
+++
++     // Create shared buffer
++     let buffer = SharedBuffer::new(100);
++-    
+++
++     // Setup proof generator with threshold of 3
++     let generator = MultiSourceProofGenerator::new(Arc::clone(&buffer), 3);
++-    
+++
++     // Simulate 5 reporter nodes
++     info!("Creating simulated reporter entries...");
++     let reporter_count = 5;
++-    
+++
++     for i in 0..reporter_count {
++         // Create a simulated quantum key (32 bytes)
++         let mut key_hash = Vec::with_capacity(32);
++         for j in 0..32 {
++             key_hash.push(((i * j) % 256) as u8);
++         }
++-        
+++
++         // Create a reporter entry
++         let reporter = ReporterEntry {
++             reporter_id: format!("reporter-{}", i),
++             key_id: format!("key-{}", i),
++             key_hash,
++-            signature: Vec::new(),  // No signature needed for demo
+++            signature: Vec::new(), // No signature needed for demo
++             timestamp: std::time::SystemTime::now()
++                 .duration_since(std::time::UNIX_EPOCH)?
++                 .as_secs(),
++         };
++-        
+++
++         // Add to buffer
++         generator.add_report(reporter.clone());
++         info!("Added reporter: {}", reporter.reporter_id);
++     }
++-    
+++
++     // Generate multi-source proof
++     info!("\nGenerating multi-source proof...");
++     let start = Instant::now();
++-    
+++
++     match generator.generate_proof().await {
++         Ok(result) => {
++             let generation_time = start.elapsed();
++@@ -62,40 +62,47 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++             info!("  Source count: {}", result.source_count);
++             info!("  Commitment: {}", result.proof.get_commitment());
++             info!("  VRF seed: {}", result.proof.get_vrf_seed());
++-            
+++
++             // Verify the proof
++             info!("\nVerifying multi-source proof...");
++             let verify_start = Instant::now();
++             match result.proof.verify() {
++                 Ok(valid) => {
++                     if valid {
++-                        info!("✅ Proof verified successfully in {:?}", verify_start.elapsed());
+++                        info!(
+++                            "✅ Proof verified successfully in {:?}",
+++                            verify_start.elapsed()
+++                        );
++                     } else {
++                         info!("❌ Proof verification failed");
++                     }
++-                },
+++                }
++                 Err(e) => info!("❌ Error during verification: {}", e),
++             }
++-            
+++
++             // Generate VRF output
++             info!("\nGenerating VRF outputs from proof...");
++             if let Ok(vrf_output) = result.vrf.prove() {
++                 info!("✅ VRF output generated");
++                 info!("  Random bytes: {:?}", &vrf_output.random_value[..8]); // Show first 8 bytes
++-                
+++
++                 // Use VRF for leader election
++                 if let Ok(leader) = result.vrf.elect_leader(reporter_count as u64) {
++                     info!("  Elected leader: reporter-{}", leader);
++                 }
++-                
+++
++                 // Use VRF for committee selection
++                 if let Ok(committee) = result.vrf.select_committee(3, reporter_count as u64) {
++-                    info!("  Selected committee: {:?}", committee.iter()
++-                        .map(|&id| format!("reporter-{}", id))
++-                        .collect::<Vec<_>>());
+++                    info!(
+++                        "  Selected committee: {:?}",
+++                        committee
+++                            .iter()
+++                            .map(|&id| format!("reporter-{}", id))
+++                            .collect::<Vec<_>>()
+++                    );
++                 }
++             }
++-            
+++
++             // Export proof for third-party verification
++             let export_path = std::env::current_dir()?.join("proof_export.json");
++             if let Err(e) = result.proof.export_for_verification(&export_path) {
++@@ -103,14 +110,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
++             } else {
++                 info!("\n✅ Exported proof to {:?}", export_path);
++             }
++-        },
+++        }
++         Err(e) => info!("❌ Error generating proof: {}", e),
++     }
++-    
+++
++     info!("\n📋 Next Steps:");
++     info!("1. Generate circuit files using the 'compile_circuit.sh' script");
++     info!("2. Integrate with your existing reporter nodes");
++     info!("3. Connect to Byzantine consensus for production use");
++-    
+++
++     Ok(())
++ }
++diff --git a/src/bin/vrf_consensus_demo.rs b/src/bin/vrf_consensus_demo.rs
++index d79844a..6ac574b 100644
++--- a/src/bin/vrf_consensus_demo.rs
+++++ b/src/bin/vrf_consensus_demo.rs
++@@ -1,6 +1,6 @@
++ // Save this as src/bin/vrf_consensus_demo.rs (completely replacing the existing file)
++ use qkd_client::byzantine::vrf_consensus::VRFBasedConsensus;
++-use qkd_client::quantum_auth::hybrid::HybridAuth; 
+++use qkd_client::quantum_auth::hybrid::HybridAuth;
++ use qkd_client::vrf::integrated::IntegratedVRF;
++ use std::error::Error;
++ use std::time::Instant;
++@@ -8,37 +8,40 @@ use std::time::Instant;
++ fn main() -> Result<(), Box<dyn Error>> {
++     println!("🔐 VRF-based Byzantine Consensus Demo");
++     println!("===================================");
++-    
+++
++     // Setup participants
++     let participants = vec![1, 2, 3, 4];
++     let mut consensuses = Vec::new();
++     let mut quantum_keys = Vec::new();
++-    
+++
++     // Initialize VRF for each node
++     for &node_id in &participants {
++         // Initialize HybridAuth
++         let hybrid_auth = HybridAuth::new()?;
++-        
+++
++         // Generate a quantum key (in a real system, this would come from your QKD source)
++         let quantum_key = vec![node_id as u8; 16]; // Simplified key for demo
++         quantum_keys.push(quantum_key.clone());
++-        
+++
++         let vrf = IntegratedVRF::new(hybrid_auth);
++         let consensus = VRFBasedConsensus::new(vrf, node_id, quantum_key);
++         consensuses.push(consensus);
++     }
++-    
+++
++     // Simulate multiple rounds of consensus
++     for round in 1..=3 {
++         println!("\n🔄 Round {}", round);
++-        
+++
++         // Each node proposes a leader
++         println!("Leader selection:");
++         for (i, consensus) in consensuses.iter().enumerate() {
++             let leader = consensus.select_leader(round, &participants)?;
++-            println!("  Node {} proposes node {} as leader", participants[i], leader);
+++            println!(
+++                "  Node {} proposes node {} as leader",
+++                participants[i], leader
+++            );
++         }
++     }
++-    
+++
++     Ok(())
++ }
++diff --git a/src/bin/vrf_demo.rs b/src/bin/vrf_demo.rs
++index 3a992a3..e8e4846 100644
++--- a/src/bin/vrf_demo.rs
+++++ b/src/bin/vrf_demo.rs
++@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
++ 
++     println!("VRF Output: {}", hex::encode(&response.output[0..16]));
++     println!("VRF Proof Size: {} bytes", response.vrf_proof.len());
++-    println!("ZK Proof Size: {} bytes", response.zk_proof.len());
+++    println!("VRF Proof Size: {} bytes", response.vrf_proof.len());
++     println!("Generation Time: {:?}", elapsed);
++ 
++     // Verify the output
++diff --git a/src/bin/vrf_simple_demo.rs b/src/bin/vrf_simple_demo.rs
++index 9e3cc51..5a2f836 100644
++--- a/src/bin/vrf_simple_demo.rs
+++++ b/src/bin/vrf_simple_demo.rs
++@@ -1,4 +1,3 @@
++-
++ // src/bin/vrf_simple_demo.rs (new file)
++ use qkd_client::quantum_auth::hybrid::HybridAuth;
++ use qkd_client::vrf::integrated::IntegratedVRF;
++@@ -8,35 +7,38 @@ use std::time::Instant;
++ fn main() -> Result<(), Box<dyn Error>> {
++     println!("�� Simple VRF Demo");
++     println!("=================");
++-    
+++
++     // Initialize the hybrid auth system directly
++     let hybrid_auth = HybridAuth::new()?;
++-    
+++
++     // Create the VRF system
++     let vrf = IntegratedVRF::new(hybrid_auth);
++-    
+++
++     // Generate a quantum key (in a real system, this would come from your QKD source)
++     let quantum_key = [1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
++-    
+++
++     // Generate VRF output with proof
++     let input = b"Test input for VRF";
++     println!("Generating VRF output for input: {:?}", input);
++-    
+++
++     let start = Instant::now();
++     let response = vrf.generate_with_proof(input, &quantum_key)?;
++     let elapsed = start.elapsed();
++-    
+++
++     println!("VRF Generation Time: {:?}", elapsed);
++     println!("VRF Output (first 16 bytes): {:?}", &response.output[0..16]);
++     println!("VRF Proof Size: {} bytes", response.vrf_proof.len());
++-    
+++
++     // Verify the VRF output
++     let start = Instant::now();
++     let is_valid = vrf.verify_with_proof(input, &response, &quantum_key)?;
++     let elapsed = start.elapsed();
++-    
+++
++     println!("Verification Time: {:?}", elapsed);
++-    println!("Verification Result: {}", if is_valid { "✅ Valid" } else { "❌ Invalid" });
++-    
+++    println!(
+++        "Verification Result: {}",
+++        if is_valid { "✅ Valid" } else { "❌ Invalid" }
+++    );
+++
++     Ok(())
++ }
++diff --git a/src/byzantine/consensus.rs b/src/byzantine/consensus.rs
++index a9b395f..3c5147c 100644
++--- a/src/byzantine/consensus.rs
+++++ b/src/byzantine/consensus.rs
++@@ -74,18 +74,15 @@ impl Clone for ByzantineConsensus {
++         // In a real implementation, you would properly clone all fields
++         let view = *self.view.lock().unwrap();
++         let sequence = *self.sequence.lock().unwrap();
++-        
+++
++         // Create a new instance with the same configuration
++-        let consensus = Self::new(
++-            &self.node_id, 
++-            Arc::clone(&self.buffer), 
++-            self.config.clone()
++-        ).unwrap_or_else(|_| panic!("Failed to clone consensus instance"));
++-        
+++        let consensus = Self::new(&self.node_id, Arc::clone(&self.buffer), self.config.clone())
+++            .unwrap_or_else(|_| panic!("Failed to clone consensus instance"));
+++
++         // Set the view and sequence to match the original
++         *consensus.view.lock().unwrap() = view;
++         *consensus.sequence.lock().unwrap() = sequence;
++-        
+++
++         consensus
++     }
++ }
++diff --git a/src/byzantine/vrf_consensus.rs b/src/byzantine/vrf_consensus.rs
++index 92ea4f0..9f71fd9 100644
++--- a/src/byzantine/vrf_consensus.rs
+++++ b/src/byzantine/vrf_consensus.rs
++@@ -1,41 +1,174 @@
++-// src/byzantine/vrf_consensus.rs
++ use crate::vrf::integrated::IntegratedVRF;
++ use crate::vrf::integrated::VRFResponse;
++ use std::error::Error;
+++use tracing::{debug, info, warn};
++ 
+++/// Byzantine consensus implementation that uses VRF for leader selection
+++///
+++/// This implementation provides unpredictable but verifiable leader selection
+++/// for Byzantine fault-tolerant systems using quantum-resistant VRF.
++ pub struct VRFBasedConsensus {
++-    pub(crate) vrf: IntegratedVRF, // Make accessible to methods but private externally
+++    vrf: IntegratedVRF,
++     node_id: u64,
++     quantum_key: Vec<u8>,
++ }
++ 
++ impl VRFBasedConsensus {
+++    /// Create a new VRF-based consensus node
++     pub fn new(vrf: IntegratedVRF, node_id: u64, quantum_key: Vec<u8>) -> Self {
++-        Self { vrf, node_id, quantum_key }
+++        Self {
+++            vrf,
+++            node_id,
+++            quantum_key,
+++        }
++     }
++-    
+++
+++    /// Select a leader for the current round
+++    ///
+++    /// This uses the VRF to generate an unpredictable but verifiable leader selection
++     pub fn select_leader(&self, round: u64, participants: &[u64]) -> Result<u64, Box<dyn Error>> {
++-        // Use VRF to generate unpredictable but verifiable randomness
++-        let input = format!("leader-{}", round).as_bytes().to_vec();
+++        debug!("Node {} selecting leader for round {}", self.node_id, round);
+++
+++        if participants.is_empty() {
+++            return Err("Cannot select leader: participant list is empty".into());
+++        }
+++
+++        // Combine round number with protocol context to prevent replay
+++        let input = format!("leader-selection-round-{}", round)
+++            .as_bytes()
+++            .to_vec();
+++
+++        // Generate VRF output using the node's quantum key
+++        let start = std::time::Instant::now();
++         let response = self.vrf.generate_with_proof(&input, &self.quantum_key)?;
++-        
+++        debug!("Generated VRF output in {:?}", start.elapsed());
+++
++         // Use the VRF output to select a leader from participants
+++        let leader_index = self.output_to_index(&response.output, participants.len())?;
+++        let selected_leader = participants[leader_index];
+++
+++        info!(
+++            "Node {} selected leader {} for round {}",
+++            self.node_id, selected_leader, round
+++        );
+++
+++        Ok(selected_leader)
+++    }
+++
+++    /// Verify another node's leader selection
+++    pub fn verify_leader_selection(
+++        &self,
+++        round: u64,
+++        participants: &[u64],
+++        claimed_leader: u64,
+++        vrf_output: &[u8],
+++        vrf_proof: &[u8],
+++        public_key: &[u8],
+++    ) -> Result<bool, Box<dyn Error>> {
+++        debug!("Verifying leader selection for round {}", round);
+++
++         if participants.is_empty() {
++-            return Err("Participants list cannot be empty".into());
+++            return Err("Cannot verify: participant list is empty".into());
++         }
++-        
++-        // Take the first 8 bytes of the output and convert to a u64
++-        let random_bytes = if response.output.len() >= 8 {
++-            let mut bytes = [0u8; 8];
++-            bytes.copy_from_slice(&response.output[0..8]);
++-            bytes
++-        } else {
++-            return Err("VRF output too short".into());
+++
+++        // Recreate the input
+++        let input = format!("leader-selection-round-{}", round)
+++            .as_bytes()
+++            .to_vec();
+++
+++        // Verify the VRF output
+++        let response = VRFResponse {
+++            output: vrf_output.to_vec(),
+++            vrf_proof: vrf_proof.to_vec(),
++         };
++-        
++-        let random_value = u64::from_le_bytes(random_bytes);
++-        let leader_index = random_value % participants.len() as u64;
++-        
++-        Ok(participants[leader_index as usize])
+++
+++        let start = std::time::Instant::now();
+++        let vrf_valid = self.vrf.verify_with_proof(&input, &response, public_key)?;
+++
+++        if !vrf_valid {
+++            warn!(
+++                "VRF verification failed for leader selection in round {}",
+++                round
+++            );
+++            return Ok(false);
+++        }
+++        debug!("VRF output verified in {:?}", start.elapsed());
+++
+++        // Check if the leader computation matches
+++        let leader_index = self.output_to_index(vrf_output, participants.len())?;
+++        let expected_leader = participants[leader_index];
+++
+++        let valid = expected_leader == claimed_leader;
+++        if !valid {
+++            warn!(
+++                "Leader mismatch: expected {}, claimed {}",
+++                expected_leader, claimed_leader
+++            );
+++        }
+++
+++        info!(
+++            "Leader selection verification result: {}",
+++            if valid { "valid" } else { "invalid" }
+++        );
+++        Ok(valid)
+++    }
+++
+++    /// Convert VRF output bytes to an index in the participants array
+++    fn output_to_index(
+++        &self,
+++        output: &[u8],
+++        participant_count: usize,
+++    ) -> Result<usize, Box<dyn Error>> {
+++        if output.len() < 8 {
+++            return Err("VRF output too short, need at least 8 bytes".into());
+++        }
+++
+++        // Take first 8 bytes and interpret as u64
+++        let mut bytes = [0u8; 8];
+++        bytes.copy_from_slice(&output[0..8]);
+++        let random_value = u64::from_le_bytes(bytes);
+++
+++        // Map random value to participant index
+++        let index = (random_value % participant_count as u64) as usize;
+++        debug!(
+++            "Mapped VRF output to index {} (from random value {})",
+++            index, random_value
+++        );
+++
+++        Ok(index)
+++    }
+++
+++    /// Get the node's ID
+++    pub fn get_node_id(&self) -> u64 {
+++        self.node_id
+++    }
+++}
+++
+++#[cfg(test)]
+++mod tests {
+++    use super::*;
+++    use crate::quantum_auth::hybrid::HybridAuth;
+++
+++    #[test]
+++    fn test_leader_selection() -> Result<(), Box<dyn Error>> {
+++        // Initialize components
+++        let auth = HybridAuth::new()?;
+++        let vrf = IntegratedVRF::new(auth);
+++        let quantum_key = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+++        let consensus = VRFBasedConsensus::new(vrf, 1, quantum_key);
+++
+++        // Test participants
+++        let participants = vec![10, 20, 30, 40, 50];
+++
+++        // Select leader for a round
+++        let leader = consensus.select_leader(1, &participants)?;
+++
+++        // Verify the leader is one of the participants
+++        assert!(
+++            participants.contains(&leader),
+++            "Selected leader should be in participants list"
+++        );
+++
+++        Ok(())
++     }
++ }
++diff --git a/src/lib.rs b/src/lib.rs
++index 574797c..77dd731 100644
++--- a/src/lib.rs
+++++ b/src/lib.rs
++@@ -2,5 +2,5 @@
++ pub mod byzantine;
++ pub mod quantum_auth;
++ pub mod reporter;
++-pub mod zk;
++ pub mod vrf;
+++pub mod zk;
++diff --git a/src/main.rs b/src/main.rs
++index 119f1ee..688abc1 100644
++--- a/src/main.rs
+++++ b/src/main.rs
++@@ -1,9 +1,9 @@
++ // src/main.rs
+++mod byzantine;
++ mod quantum_auth;
++ mod reporter;
++-mod zk;
++-mod byzantine;
++ mod vrf;
+++mod zk;
++ use reporter::ReporterNode;
++ use tracing_subscriber::FmtSubscriber;
++ 
++diff --git a/src/quantum_auth/hybrid.rs b/src/quantum_auth/hybrid.rs
++index 9ef9697..291b21b 100644
++--- a/src/quantum_auth/hybrid.rs
+++++ b/src/quantum_auth/hybrid.rs
++@@ -12,6 +12,7 @@ use ring::signature::{self, Ed25519KeyPair, KeyPair, Signature};
++ /// A hybrid authentication system that combines classical Ed25519 signatures
++ /// with quantum-resistant SPHINCS+ signatures for maximum security during
++ /// the transition to post-quantum cryptography.
+++
++ pub struct HybridAuth {
++     classical_keypair: Ed25519KeyPair,
++     quantum_auth: SphincsAuth,
++@@ -19,7 +20,7 @@ pub struct HybridAuth {
++ 
++ #[derive(Debug, Clone)]
++ pub struct HybridProof {
++-    pub classical: Vec<u8>,  // ✅ Just a field definition
+++    pub classical: Vec<u8>, // ✅ Just a field definition
++     pub quantum: Vec<u8>,
++ }
++ 
++@@ -188,18 +189,18 @@ impl HybridAuth {
++             .map_err(|e| e.into())
++     }
++     pub fn authenticate(&self) -> Result<HybridProof, Box<dyn Error>> {
++-    debug!("Generating hybrid authentication proof...");
+++        debug!("Generating hybrid authentication proof...");
++ 
++-    let classical_proof = self.classical_keypair.sign(b"Hybrid Authentication");
++-    let classical_proof_bytes = classical_proof.as_ref().to_vec();  // ✅ Convert Signature to Vec<u8>
+++        let classical_proof = self.classical_keypair.sign(b"Hybrid Authentication");
+++        let classical_proof_bytes = classical_proof.as_ref().to_vec(); // ✅ Convert Signature to Vec<u8>
++ 
++-    let quantum_proof = self.quantum_auth.sign(&classical_proof_bytes)?;
+++        let quantum_proof = self.quantum_auth.sign(&classical_proof_bytes)?;
++ 
++-    Ok(HybridProof {
++-        classical: classical_proof_bytes,  // ✅ Now matches the struct field type
++-        quantum: quantum_proof,
++-    })
++-}
+++        Ok(HybridProof {
+++            classical: classical_proof_bytes, // ✅ Now matches the struct field type
+++            quantum: quantum_proof,
+++        })
+++    }
++ 
++     /// Generate Ed25519 keypair for classical signatures
++     fn generate_ed25519_keypair() -> Result<Ed25519KeyPair, Box<dyn Error>> {
++diff --git a/src/quantum_auth/mod.rs b/src/quantum_auth/mod.rs
++index c7ddfac..b1b12ef 100644
++--- a/src/quantum_auth/mod.rs
+++++ b/src/quantum_auth/mod.rs
++@@ -2,10 +2,10 @@
++ mod authenticator;
++ mod circuit;
++ mod commitment;
+++pub mod hybrid;
++ pub mod pq;
++ mod pq_auth;
++-pub mod hybrid;   
++-pub use hybrid::HybridAuth;  
+++pub use hybrid::HybridAuth;
++ 
++ pub use authenticator::QuantumAuthenticator;
++-pub use pq::SphincsAuth; // Correct export path
+++pub use pq::SphincsAuth;
++diff --git a/src/quantum_auth/pq/sphincs.rs b/src/quantum_auth/pq/sphincs.rs
++index 85921e6..aeabaa2 100644
++--- a/src/quantum_auth/pq/sphincs.rs
+++++ b/src/quantum_auth/pq/sphincs.rs
++@@ -47,6 +47,7 @@ pub struct SphincsSignature {
++     pub variant: String,
++ }
++ 
+++#[derive(Clone)]
++ pub struct SphincsAuth {
++     public_key: sphincssha2128fsimple::PublicKey,
++     private_key: sphincssha2128fsimple::SecretKey,
++diff --git a/src/vrf/core.rs b/src/vrf/core.rs
++index 78e78fa..525e626 100644
++--- a/src/vrf/core.rs
+++++ b/src/vrf/core.rs
++@@ -1,46 +1,81 @@
++-// src/vrf/core.rs
++ use crate::quantum_auth::hybrid::HybridAuth;
++ use sha3::{Digest, Sha3_512};
++ use std::error::Error;
+++use tracing::{debug, info};
++ 
+++/// Verifiable Random Function implementation using quantum authentication
+++///
+++/// This VRF creates unpredictable but verifiable randomness from quantum keys
+++/// by combining the input with a quantum key and using hybrid authentication
+++/// as the source of verifiability.
++ pub struct QuantumVRF {
++     signer: HybridAuth,
++ }
++ 
++ impl QuantumVRF {
+++    /// Create a new VRF using the provided hybrid auth system
++     pub fn new(signer: HybridAuth) -> Self {
++         Self { signer }
++     }
++ 
++-    // Generate a random value and proof based on quantum key input
+++    /// Generate a random value and proof based on quantum key input
+++    ///
+++    /// # Arguments
+++    /// * `input` - Public input data (e.g., round number, context)
+++    /// * `quantum_key` - Quantum key from QKD (remains secret)
+++    ///
+++    /// # Returns
+++    /// Tuple of (random_output, proof)
++     pub fn generate(
++         &self,
++         input: &[u8],
++         quantum_key: &[u8],
++     ) -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
+++        debug!(
+++            "Generating VRF output from quantum key, input length: {}",
+++            input.len()
+++        );
+++
++         // Combine input with quantum key to create seed
++         let mut hasher = Sha3_512::new();
++         hasher.update(input);
++         hasher.update(quantum_key);
++-        let seed = hasher.finalize();
+++        let seed = hasher.finalize().to_vec();
+++        debug!("Generated VRF seed from quantum key and input");
++ 
++         // Use the seed to generate a signature (serves as the proof)
++-        let signature = self.signer.sign(&seed.to_vec())?;
+++        let signature = self.signer.sign(&seed)?;
++ 
++         // Serialize the signature for use as proof
+++        let start = std::time::Instant::now();
++         let signature_bytes = HybridAuth::serialize_signature(&signature)?
++             .as_bytes()
++             .to_vec();
+++        debug!("Serialized signature in {:?}", start.elapsed());
++ 
++         // Hash the signature to get the random output
++         let mut output_hasher = Sha3_512::new();
++         output_hasher.update(&signature_bytes);
++         let random_output = output_hasher.finalize().to_vec();
++ 
+++        info!(
+++            "VRF output generated successfully: {} bytes, proof: {} bytes",
+++            random_output.len(),
+++            signature_bytes.len()
+++        );
++         Ok((random_output, signature_bytes))
++     }
++ 
++-    // Verify a VRF output with its proof
+++    /// Verify a VRF output with its proof
+++    ///
+++    /// # Arguments
+++    /// * `input` - The same public input used for generation
+++    /// * `output` - The random output to verify
+++    /// * `proof` - The proof of correct generation
+++    /// * `quantum_key` - The quantum key used for generation
+++    ///
+++    /// # Returns
+++    /// `true` if the output was correctly derived from the input and quantum key
++     pub fn verify(
++         &self,
++         input: &[u8],
++@@ -48,24 +83,64 @@ impl QuantumVRF {
++         proof: &[u8],
++         quantum_key: &[u8],
++     ) -> Result<bool, Box<dyn Error>> {
+++        debug!("Verifying VRF output, input length: {}", input.len());
+++
++         // Recreate the seed
++         let mut hasher = Sha3_512::new();
++         hasher.update(input);
++         hasher.update(quantum_key);
++-        let seed = hasher.finalize();
+++        let seed = hasher.finalize().to_vec();
++ 
++         // Deserialize and verify the signature (proof)
+++        let start = std::time::Instant::now();
++         let signature = HybridAuth::deserialize_signature(&String::from_utf8(proof.to_vec())?)?;
++ 
++-        if !self.signer.verify(&seed.to_vec(), &signature)? {
+++        if !self.signer.verify(&seed, &signature)? {
+++            debug!("VRF verification failed - invalid signature");
++             return Ok(false);
++         }
+++        debug!("VRF signature verified in {:?}", start.elapsed());
++ 
++         // Verify the output by hashing the signature
++         let mut output_hasher = Sha3_512::new();
++         output_hasher.update(proof);
++-        let expected_output = output_hasher.finalize();
+++        let expected_output = output_hasher.finalize().to_vec();
+++
+++        let valid = &expected_output[..] == output;
+++        info!(
+++            "VRF verification result: {}",
+++            if valid { "valid" } else { "invalid" }
+++        );
+++        Ok(valid)
+++    }
+++}
+++
+++#[cfg(test)]
+++mod tests {
+++    use super::*;
+++
+++    #[test]
+++    fn test_vrf_generation_and_verification() -> Result<(), Box<dyn Error>> {
+++        // Initialize auth system for testing
+++        let auth = HybridAuth::new()?;
+++        let vrf = QuantumVRF::new(auth);
+++
+++        // Test values
+++        let input = b"Test VRF input";
+++        let quantum_key = b"Quantum key for testing";
+++
+++        // Generate output and proof
+++        let (output, proof) = vrf.generate(input, quantum_key)?;
+++
+++        // Verify the output
+++        let valid = vrf.verify(input, &output, &proof, quantum_key)?;
+++        assert!(valid, "VRF verification should succeed");
+++
+++        // Test with modified input (should fail)
+++        let modified_input = b"Modified input";
+++        let valid = vrf.verify(modified_input, &output, &proof, quantum_key)?;
+++        assert!(!valid, "VRF verification should fail with modified input");
++ 
++-        Ok(&expected_output[..] == output)
+++        Ok(())
++     }
++ }
++diff --git a/src/vrf/integrated.rs b/src/vrf/integrated.rs
++index b874533..4bb8b73 100644
++--- a/src/vrf/integrated.rs
+++++ b/src/vrf/integrated.rs
++@@ -1,118 +1,112 @@
++-// src/vrf/integrated.rs
++-use crate::vrf::core::QuantumVRF;
+++use super::core::QuantumVRF;
++ use crate::quantum_auth::hybrid::HybridAuth;
++-use serde_json::json;
++ use std::error::Error;
++-use std::fs;
++-use std::process::Command;
+++use tracing::{debug, info};
++ 
+++/// Response object from the VRF containing output and proofs
++ pub struct VRFResponse {
+++    /// The random output bytes generated by the VRF
++     pub output: Vec<u8>,
+++
+++    /// The proof that can be used to verify the output
++     pub vrf_proof: Vec<u8>,
++-    pub zk_proof: Vec<u8>,
++ }
++ 
+++/// Verifiable Random Function with ZK integration
+++///
+++/// This implementation provides an integrated approach for generating
+++/// verifiable randomness that can be used in distributed applications.
++ pub struct IntegratedVRF {
++     vrf: QuantumVRF,
++ }
++ 
++ impl IntegratedVRF {
+++    /// Create a new integrated VRF
++     pub fn new(signer: HybridAuth) -> Self {
++         Self {
++             vrf: QuantumVRF::new(signer),
++         }
++     }
++ 
+++    /// Generate a VRF output with proof for verification
++     pub fn generate_with_proof(
++         &self,
++         input: &[u8],
++         quantum_key: &[u8],
++     ) -> Result<VRFResponse, Box<dyn Error>> {
++-        // Generate VRF output and proof
+++        debug!("Generating integrated VRF output and proof");
+++
+++        // Generate VRF output and proof using underlying VRF implementation
++         let (random_output, vrf_proof) = self.vrf.generate(input, quantum_key)?;
++ 
++-        // Create a ZK proof that the quantum key is authentic
++-        // We'll use a simplified approach here since your ZK proof code is specific to key verification
++-        // In a real implementation, you would create a proper ZK proof for VRF seed verification
+++        // In a production system, we might add additional ZK proof generation here
+++        // to prove properties about the quantum key without revealing it
++ 
++-        // For now, we'll create a placeholder ZK proof
++-        let zk_proof = self.generate_vrf_zk_proof(quantum_key, input, &vrf_proof[0..32])?;
+++        info!(
+++            "Integrated VRF output generated: {} bytes, proof: {} bytes",
+++            random_output.len(),
+++            vrf_proof.len()
+++        );
++ 
++         Ok(VRFResponse {
++             output: random_output,
++             vrf_proof,
++-            zk_proof,
++         })
++     }
++ 
+++    /// Verify a VRF response
++     pub fn verify_with_proof(
++         &self,
++         input: &[u8],
++         response: &VRFResponse,
++         public_quantum_key: &[u8],
++     ) -> Result<bool, Box<dyn Error>> {
++-        // Verify the VRF proof
++-        let vrf_valid = self.vrf.verify(
+++        debug!("Verifying integrated VRF response");
+++
+++        // Verify the VRF output using the core verification logic
+++        let result = self.vrf.verify(
++             input,
++             &response.output,
++             &response.vrf_proof,
++             public_quantum_key,
++         )?;
++-        if !vrf_valid {
++-            return Ok(false);
++-        }
++ 
++-        // Verify the ZK proof
++-        let zk_valid = self.verify_vrf_zk_proof(
++-            &response.zk_proof,
++-            public_quantum_key,
++-            input,
++-            &response.vrf_proof[0..32],
++-        )?;
+++        // In a production system, we might add additional ZK proof verification here
++ 
++-        Ok(zk_valid)
+++        info!(
+++            "Integrated VRF verification result: {}",
+++            if result { "valid" } else { "invalid" }
+++        );
+++        Ok(result)
++     }
++ 
++-    // Simplified ZK proof generation for VRF - this is a placeholder
++-    // In a real implementation, you would use a proper ZK circuit
++-    fn generate_vrf_zk_proof(
++-        &self,
++-        quantum_key: &[u8],
++-        input: &[u8],
++-        seed: &[u8],
++-    ) -> Result<Vec<u8>, Box<dyn Error>> {
++-        // In a real implementation, this would create a ZK proof that the seed
++-        // is derived from the quantum key and input
++-
++-        // For now, we'll just return a placeholder
++-        let mut proof = Vec::new();
++-        proof.extend_from_slice(quantum_key);
++-        proof.extend_from_slice(input);
++-        proof.extend_from_slice(seed);
++-
++-        Ok(proof)
+++    /// Get the underlying VRF implementation
+++    pub fn get_vrf(&self) -> &QuantumVRF {
+++        &self.vrf
++     }
+++}
++ 
++-    // Simplified ZK proof verification for VRF - this is a placeholder
++-    fn verify_vrf_zk_proof(
++-        &self,
++-        proof: &[u8],
++-        quantum_key: &[u8],
++-        input: &[u8],
++-        seed: &[u8],
++-    ) -> Result<bool, Box<dyn Error>> {
++-        // In a real implementation, this would verify a ZK proof
+++#[cfg(test)]
+++mod tests {
+++    use super::*;
++ 
++-        // For now, we'll just check if the proof contains the expected data
++-        if proof.len() != quantum_key.len() + input.len() + seed.len() {
++-            return Ok(false);
++-        }
+++    #[test]
+++    fn test_integrated_vrf() -> Result<(), Box<dyn Error>> {
+++        // Initialize auth system for testing
+++        let auth = HybridAuth::new()?;
+++        let vrf = IntegratedVRF::new(auth);
+++
+++        // Test values
+++        let input = b"Test integrated VRF";
+++        let quantum_key = b"Quantum key for integrated testing";
+++
+++        // Generate output and proof
+++        let response = vrf.generate_with_proof(input, quantum_key)?;
++ 
++-        let mut expected_proof = Vec::new();
++-        expected_proof.extend_from_slice(quantum_key);
++-        expected_proof.extend_from_slice(input);
++-        expected_proof.extend_from_slice(seed);
+++        // Verify the output
+++        let valid = vrf.verify_with_proof(input, &response, quantum_key)?;
+++        assert!(valid, "Integrated VRF verification should succeed");
++ 
++-        Ok(proof == &expected_proof[..])
+++        Ok(())
++     }
++ }
++diff --git a/src/vrf/mod.rs b/src/vrf/mod.rs
++index bcdcaa5..1647cb2 100644
++--- a/src/vrf/mod.rs
+++++ b/src/vrf/mod.rs
++@@ -1,7 +1,7 @@
++-pub mod integrated;
++ pub mod core;
++-use std::vec;
+++pub mod integrated;
++ use ark_std::error::Error;
+++use std::vec;
++ // src/vrf/mod.rs
++ use crate::quantum_auth::hybrid::HybridSignature;
++ use sha3::{Digest, Sha3_512};
++@@ -17,7 +17,11 @@ impl QuantumVRF {
++     }
++ 
++     // Generate a random value and proof based on quantum key input
++-    pub fn generate(&self, input: &[u8], quantum_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
+++    pub fn generate(
+++        &self,
+++        input: &[u8],
+++        quantum_key: &[u8],
+++    ) -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
++         // Combine input with quantum key to create seed
++         let mut hasher = Sha3_512::new();
++         hasher.update(input);
++@@ -25,7 +29,7 @@ impl QuantumVRF {
++         let seed = hasher.finalize();
++ 
++         // 🔹 Quantum-Safe Signing Placeholder (Replace with SPHINCS+, Falcon, or other PQC)
++-        let signature = vec![0u8; 64];  // Placeholder: Replace with actual quantum signature
+++        let signature = vec![0u8; 64]; // Placeholder: Replace with actual quantum signature
++ 
++         // Hash the signature to get the random output
++         let mut output_hasher = Sha3_512::new();
++@@ -36,7 +40,13 @@ impl QuantumVRF {
++     }
++ 
++     // Verify a VRF output with its proof
++-    pub fn verify(&self, input: &[u8], output: &[u8], proof: &[u8], quantum_key: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
+++    pub fn verify(
+++        &self,
+++        input: &[u8],
+++        output: &[u8],
+++        proof: &[u8],
+++        quantum_key: &[u8],
+++    ) -> Result<bool, Box<dyn std::error::Error>> {
++         // Recreate the seed
++         let mut hasher = Sha3_512::new();
++         hasher.update(input);
++diff --git a/src/zk/multi_source_generator.rs b/src/zk/multi_source_generator.rs
++index f6f8012..9e670dd 100644
++--- a/src/zk/multi_source_generator.rs
+++++ b/src/zk/multi_source_generator.rs
++@@ -3,7 +3,7 @@ use std::error::Error;
++ use std::sync::Arc;
++ use tracing::{debug, info};
++ 
++-use crate::byzantine::buffer::{SharedBuffer, ReporterEntry};
+++use crate::byzantine::buffer::{ReporterEntry, SharedBuffer};
++ use crate::byzantine::consensus::{ByzantineConsensus, ConsensusResult};
++ use crate::zk::multi_source_proof::MultiSourceKeyProof;
++ use crate::zk::vrf::VerifiableRandomFunction;
++@@ -25,12 +25,9 @@ pub struct MultiSourceProofResult {
++ impl MultiSourceProofGenerator {
++     /// Create a new multi-source proof generator
++     pub fn new(buffer: Arc<SharedBuffer>, threshold: usize) -> Self {
++-        Self {
++-            buffer,
++-            threshold,
++-        }
+++        Self { buffer, threshold }
++     }
++-    
+++
++     /// Generate a proof from the current state of the buffer
++     pub async fn generate_proof(&self) -> Result<MultiSourceProofResult, Box<dyn Error>> {
++         // Get all reports from the buffer
++@@ -38,26 +35,25 @@ impl MultiSourceProofGenerator {
++         if reports.is_empty() {
++             return Err("No reports available for proof generation".into());
++         }
++-        
++-        info!("Generating multi-source proof from {} reports", reports.len());
++-        
+++
+++        info!(
+++            "Generating multi-source proof from {} reports",
+++            reports.len()
+++        );
+++
++         // Create multi-source proof
++         let nonce = std::time::SystemTime::now()
++             .duration_since(std::time::UNIX_EPOCH)?
++             .as_secs();
++-            
++-        let proof = MultiSourceKeyProof::new(
++-            &reports, 
++-            self.threshold,
++-            nonce
++-        ).await?;
++-        
+++
+++        let proof = MultiSourceKeyProof::new(&reports, self.threshold, nonce).await?;
+++
++         // Create a VRF from the proof commitment and seed
++         let vrf = VerifiableRandomFunction::from_multi_source_proof(
++             proof.get_commitment(),
++-            proof.get_vrf_seed()
+++            proof.get_vrf_seed(),
++         )?;
++-        
+++
++         // Create a placeholder consensus result (in a real implementation,
++         // this would be the actual result from running Byzantine consensus)
++         let consensus_result = ConsensusResult {
++@@ -68,7 +64,7 @@ impl MultiSourceProofGenerator {
++             round_number: 0,
++             total_messages: reports.len(),
++         };
++-        
+++
++         Ok(MultiSourceProofResult {
++             proof,
++             vrf,
++@@ -76,11 +72,11 @@ impl MultiSourceProofGenerator {
++             consensus_result,
++         })
++     }
++-    
+++
++     /// Generate proof after running Byzantine consensus
++     pub async fn generate_proof_with_consensus(
++         &self,
++-        consensus: &ByzantineConsensus
+++        consensus: &ByzantineConsensus,
++     ) -> Result<MultiSourceProofResult, Box<dyn Error>> {
++         // Run Byzantine consensus
++         info!("Running Byzantine consensus before generating proof");
++@@ -88,10 +84,10 @@ impl MultiSourceProofGenerator {
++             // If we're the primary, start a new consensus round
++             let value = b"Start multi-source proof generation".to_vec();
++             consensus.start_consensus(value)?;
++-            
+++
++             // Wait for consensus (in a real system, would properly manage state)
++             std::thread::sleep(std::time::Duration::from_secs(1));
++-            
+++
++             // Create placeholder result
++             ConsensusResult {
++                 success: true,
++@@ -105,15 +101,15 @@ impl MultiSourceProofGenerator {
++             // Not primary, participate in consensus
++             consensus.run_consensus_round()?
++         };
++-        
+++
++         // Only proceed if consensus was successful
++         if !consensus_result.success {
++             return Err("Byzantine consensus failed, cannot generate proof".into());
++         }
++-        
+++
++         // Generate proof from reports
++         let proof_result = self.generate_proof().await?;
++-        
+++
++         // Combine with consensus result
++         Ok(MultiSourceProofResult {
++             proof: proof_result.proof,
++@@ -122,7 +118,7 @@ impl MultiSourceProofGenerator {
++             consensus_result,
++         })
++     }
++-    
+++
++     /// Add a report to the buffer
++     pub fn add_report(&self, report: ReporterEntry) {
++         self.buffer.add_report(report);
++diff --git a/src/zk/multi_source_proof.rs b/src/zk/multi_source_proof.rs
++index 5f39694..11430ee 100644
++--- a/src/zk/multi_source_proof.rs
+++++ b/src/zk/multi_source_proof.rs
++@@ -1,17 +1,14 @@
++ // src/zk/multi_source_proof.rs
+++use serde_json::{json, Value};
+++use std::collections::HashMap;
++ use std::error::Error;
++ use std::fs;
++ use std::path::{Path, PathBuf};
++ use std::process::Command;
++-use std::collections::HashMap;
++-use serde_json::{json, Value};
++ use tracing::{debug, info};
++ 
++-
++ use crate::byzantine::buffer::ReporterEntry;
++ 
++-
++-
++ // Represents a proof for multiple quantum sources
++ pub struct MultiSourceKeyProof {
++     proof: Value,
++@@ -26,30 +23,36 @@ impl MultiSourceKeyProof {
++     pub async fn new(
++         sources: &[ReporterEntry],
++         threshold: usize,
++-        nonce: u64
+++        nonce: u64,
++     ) -> Result<Self, Box<dyn Error>> {
++-        info!("Starting multi-source proof generation for {} sources (threshold: {})",
++-            sources.len(), threshold);
+++        info!(
+++            "Starting multi-source proof generation for {} sources (threshold: {})",
+++            sources.len(),
+++            threshold
+++        );
++ 
++         // Get current directory and set paths
++         let current_dir = std::env::current_dir()?;
++         let circuits_dir = current_dir.join("circuits");
++-        
+++
++         // Verify required files exist
++         let wasm_path = Self::check_file_exists(
++-            circuits_dir.join("multi_source_key_js").join("multi_source_key.wasm"))?;
++-        let zkey_path = Self::check_file_exists(
++-            circuits_dir.join("multi_source_key_0001.zkey"))?;
++-        let vkey_path = Self::check_file_exists(
++-            circuits_dir.join("multi_source_verification_key.json"))?;
++-            
+++            circuits_dir
+++                .join("multi_source_key_js")
+++                .join("multi_source_key.wasm"),
+++        )?;
+++        let zkey_path = Self::check_file_exists(circuits_dir.join("multi_source_key_0001.zkey"))?;
+++        let vkey_path =
+++            Self::check_file_exists(circuits_dir.join("multi_source_verification_key.json"))?;
+++
++         let input_path = circuits_dir.join("multi_source_input.json");
++         let witness_path = circuits_dir.join("multi_source_witness.wtns");
++         let proof_path = circuits_dir.join("multi_source_proof.json");
++         let public_path = circuits_dir.join("multi_source_public.json");
++-        
+++
++         // Create input file
++-        let input = Self::prepare_input_file(sources, (threshold as u64).try_into().unwrap(), nonce)?;
+++        let input =
+++            Self::prepare_input_file(sources, (threshold as u64).try_into().unwrap(), nonce)?;
++         fs::write(&input_path, input.to_string())?;
++         debug!("Created multi-source input file at {:?}", input_path);
++ 
++@@ -92,11 +95,12 @@ impl MultiSourceKeyProof {
++         let proof: Value = serde_json::from_str(&fs::read_to_string(&proof_path)?)?;
++         let verification_key: Value = serde_json::from_str(&fs::read_to_string(&vkey_path)?)?;
++         let public_inputs: Value = serde_json::from_str(&fs::read_to_string(&public_path)?)?;
++-        
+++
++         // Extract commitment and VRF seed from public inputs
++-        let inputs = public_inputs.as_array()
+++        let inputs = public_inputs
+++            .as_array()
++             .ok_or("Invalid public inputs format")?;
++-        
+++
++         // The last two elements should be combinedCommitment and vrfSeed
++         let combined_commitment = inputs
++             .get(inputs.len() - 2)
++@@ -104,14 +108,14 @@ impl MultiSourceKeyProof {
++             .as_str()
++             .ok_or("Invalid combinedCommitment format")?
++             .to_string();
++-            
+++
++         let vrf_seed = inputs
++             .get(inputs.len() - 1)
++             .ok_or("Missing vrfSeed in public inputs")?
++             .as_str()
++             .ok_or("Invalid vrfSeed format")?
++             .to_string();
++-            
+++
++         info!("Generated commitment: {}", combined_commitment);
++         info!("Generated VRF seed: {}", vrf_seed);
++ 
++@@ -123,23 +127,23 @@ impl MultiSourceKeyProof {
++             vrf_seed,
++         })
++     }
++-    
+++
++     // Verify this multi-source proof
++     pub fn verify(&self) -> Result<bool, Box<dyn Error>> {
++         info!("Verifying multi-source proof...");
++-        
+++
++         // Get current directory and set paths
++         let current_dir = std::env::current_dir()?;
++         let circuits_dir = current_dir.join("circuits");
++         let proof_verify_path = circuits_dir.join("multi_source_proof_to_verify.json");
++         let vkey_path = circuits_dir.join("multi_source_verification_key.json");
++         let public_path = circuits_dir.join("multi_source_public.json");
++-        
+++
++         // Write files for verification
++         fs::write(&proof_verify_path, serde_json::to_string(&self.proof)?)?;
++         fs::write(&vkey_path, serde_json::to_string(&self.verification_key)?)?;
++         fs::write(&public_path, serde_json::to_string(&self.public_inputs)?)?;
++-        
+++
++         // Verify using snarkjs
++         let output = Command::new("snarkjs")
++             .args(&[
++@@ -150,7 +154,7 @@ impl MultiSourceKeyProof {
++                 proof_verify_path.to_str().unwrap(),
++             ])
++             .output()?;
++-            
+++
++         let is_valid = output.status.success();
++         if is_valid {
++             info!("✅ Multi-source proof verified successfully");
++@@ -158,10 +162,10 @@ impl MultiSourceKeyProof {
++             let error = String::from_utf8_lossy(&output.stderr);
++             debug!("❌ Multi-source proof verification failed: {}", error);
++         }
++-        
+++
++         Ok(is_valid)
++     }
++-    
+++
++     // Export the proof and public inputs for third-party verification
++     pub fn export_for_verification(&self, path: &Path) -> Result<(), Box<dyn Error>> {
++         let export_data = json!({
++@@ -171,23 +175,23 @@ impl MultiSourceKeyProof {
++             "combined_commitment": self.combined_commitment,
++             "vrf_seed": self.vrf_seed
++         });
++-        
+++
++         fs::write(path, export_data.to_string())?;
++         info!("Exported verification data to {:?}", path);
++-        
+++
++         Ok(())
++     }
++-    
+++
++     // Get the combined commitment (for smart contracts, etc.)
++     pub fn get_commitment(&self) -> &str {
++         &self.combined_commitment
++     }
++-    
+++
++     // Get the VRF seed
++     pub fn get_vrf_seed(&self) -> &str {
++         &self.vrf_seed
++     }
++-    
+++
++     // Helper: Check if file exists
++     fn check_file_exists(path: PathBuf) -> Result<PathBuf, Box<dyn Error>> {
++         if !path.exists() {
++@@ -195,29 +199,29 @@ impl MultiSourceKeyProof {
++         }
++         Ok(path)
++     }
++-    
+++
++     // Helper: Generate JSON input for the circuit
++     fn prepare_input_file(
++         sources: &[ReporterEntry],
++         threshold: usize,
++-        nonce: u64
+++        nonce: u64,
++     ) -> Result<Value, Box<dyn Error>> {
++         // Limit to MAX_SOURCES
++         const MAX_SOURCES: usize = 5;
++         let source_count = sources.len().min(MAX_SOURCES);
++-        
+++
++         // Initialize arrays
++         let mut keys: Vec<Vec<u64>> = Vec::with_capacity(MAX_SOURCES);
++         let mut source_ids: Vec<u64> = Vec::with_capacity(MAX_SOURCES);
++         let mut valid_sources: Vec<u64> = Vec::with_capacity(MAX_SOURCES);
++-        
+++
++         // Process each source
++         for i in 0..MAX_SOURCES {
++             if i < source_count {
++                 // Extract key bytes
++                 let key_bytes = &sources[i].key_hash;
++                 let mut key_values = Vec::with_capacity(32);
++-                
+++
++                 // Convert bytes to field elements
++                 // Ensure we have at least 32 bytes (pad if necessary)
++                 for j in 0..32 {
++@@ -228,11 +232,11 @@ impl MultiSourceKeyProof {
++                     };
++                     key_values.push(value);
++                 }
++-                
+++
++                 // Add to arrays
++                 keys.push(key_values);
++                 source_ids.push(i as u64); // Use index as ID for simplicity
++-                valid_sources.push(1u64);  // All sources are considered valid
+++                valid_sources.push(1u64); // All sources are considered valid
++             } else {
++                 // Add empty padding
++                 keys.push(vec![0u64; 32]);
++@@ -240,7 +244,7 @@ impl MultiSourceKeyProof {
++                 valid_sources.push(0u64);
++             }
++         }
++-        
+++
++         // Create input object
++         let input = json!({
++             "sourceCount": source_count,
++@@ -250,7 +254,7 @@ impl MultiSourceKeyProof {
++             "sourceIds": source_ids,
++             "validSources": valid_sources
++         });
++-        
+++
++         Ok(input)
++     }
++ }
++diff --git a/src/zk/vrf.rs b/src/zk/vrf.rs
++index 092eda6..06ab1d7 100644
++--- a/src/zk/vrf.rs
+++++ b/src/zk/vrf.rs
++@@ -1,184 +1,154 @@
++-// src/zk/vrf.rs
+++use serde::{Deserialize, Serialize};
++ use std::error::Error;
++-use std::convert::TryInto;
++-use ark_std::rand::{prelude::StdRng, SeedableRng};
++-use ark_ff::{Field, PrimeField};
++-use ark_bn254::{Fr, Bn254};
++-use ark_groth16::{Groth16, Proof};
++-use ark_snark::SNARK;
++-use tracing::{debug, info};
++-use ark_std::UniformRand;
++-use ark_ff::BigInteger;
++-/// VRF (Verifiable Random Function) implementation
++-/// This creates a deterministic but unpredictable value from a ZK proof seed
+++use std::fs;
+++use std::process::Command;
+++use tracing::{debug, info, warn};
+++use std::cmp::min;
+++
+++/// Verifiable Random Function with zero-knowledge capabilities
+++///
+++/// This implementation allows generating unpredictable randomness from
+++/// a seed and proving properties of that randomness without revealing the seed.
++ pub struct VerifiableRandomFunction {
++     seed: Vec<u8>,
++-    proof_commitment: Option<String>,
++-}
++-
++-#[derive(Debug, Clone)]
++-pub struct VrfOutput {
++-    pub random_value: Vec<u8>,
++-    pub proof: Vec<u8>,
++ }
++ 
++ impl VerifiableRandomFunction {
++-    /// Create a new VRF from a seed
+++    /// Create a new VRF with the given seed
++     pub fn new(seed: &[u8]) -> Self {
++         Self {
++             seed: seed.to_vec(),
++-            proof_commitment: None,
++         }
++     }
++-    
++-    /// Create a VRF from a multi-source proof commitment
++-    pub fn from_proof_commitment(commitment: &str) -> Result<Self, Box<dyn Error>> {
++-        // Decode the commitment (hex string) to bytes
++-        let seed = hex::decode(commitment.trim_start_matches("0x"))?;
++-        
++-        Ok(Self {
++-            seed,
++-            proof_commitment: Some(commitment.to_string()),
++-        })
+++
+++    /// Generate a deterministic output from the input
+++    pub fn generate(&self, input: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+++        // Simple implementation: hash the input with the seed
+++        use sha3::{Digest, Sha3_256};
+++        let mut hasher = Sha3_256::new();
+++        hasher.update(input);
+++        hasher.update(&self.seed);
+++        Ok(hasher.finalize().to_vec())
++     }
++-    
++-    /// Generate a random value in the range [0, max)
++-    pub fn generate_range(&self, max: u64) -> Result<u64, Box<dyn Error>> {
++-        let bytes = self.generate_bytes(8)?;
++-        let value = u64::from_le_bytes(bytes.try_into().map_err(|_| "Invalid byte length for u64 conversion".to_string())?); 
++-        // Modulo to get value in range
++-        Ok(value % max)
+++
+++    /// Verify an output was generated from this input
+++    pub fn verify(&self, input: &[u8], output: &[u8]) -> Result<bool, Box<dyn Error>> {
+++        let expected = self.generate(input)?;
+++        Ok(expected == output)
++     }
+++    pub fn from_multi_source_proof(commitment: &str, vrf_seed: &str) -> Result<Self, Box<dyn Error>> {
+++    // Combine commitment and VRF seed to create a deterministic seed
+++    let mut combined = Vec::new();
+++    combined.extend_from_slice(commitment.as_bytes());
+++    combined.extend_from_slice(vrf_seed.as_bytes());
++     
++-    /// Generate random bytes
++-    pub fn generate_bytes(&self, count: usize) -> Result<Vec<u8>, Box<dyn Error>> {
++-        // Create a deterministic RNG from the seed
++-        let mut seed_array = [0u8; 32];
++-        for (i, &byte) in self.seed.iter().enumerate().take(32) {
++-            seed_array[i] = byte;
++-        }
++-        
++-        let mut rng = StdRng::from_seed(seed_array);
++-        
++-        // Use arkworks to derive field elements (Fr) from the RNG
++-        let mut result = Vec::with_capacity(count);
++-        for _ in 0..count {
++-            let fr = Fr::rand(&mut rng);
++-            let bytes = fr.into_bigint().to_bytes_le();
++-            result.extend_from_slice(&bytes[0..1]); // Take first byte for simplicity
++-        }
++-        
++-        // Ensure we have exactly the requested count
++-        result.truncate(count);
++-        
++-        Ok(result)
++-    }
+++    // Hash the combined data to create a seed
+++    use sha3::{Digest, Sha3_256};
+++    let mut hasher = Sha3_256::new();
+++    hasher.update(&combined);
+++    let seed = hasher.finalize().to_vec();
++     
++-    /// Generate a VRF output with proof
++-    pub fn prove(&self) -> Result<VrfOutput, Box<dyn Error>> {
++-        // For simplicity, we'll use the seed itself as the "random value"
++-        // In a real implementation, you would apply a cryptographic function
++-        let mut random_value = self.seed.clone();
++-        
++-        // Generate a proof that the random value was derived from the seed
++-        // This is a simplified version - a real implementation would use a ZK proof
+++    Ok(Self { seed })
+++}
+++
+++    /// Generate a zero-knowledge proof for the VRF
+++    pub fn generate_zk_proof(&self, input: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+++        debug!("Generating ZK proof for VRF");
+++
+++        // Generate the VRF output
+++        let output = self.generate(input)?;
+++        debug!("Generated VRF output: {} bytes", output.len());
+++
+++        // In a real implementation, this would create a circuit-based ZK proof
+++        // For now, we'll create a simplified proof
++         let mut proof = Vec::new();
++-        
++-        // Add the commitment if available
++-        if let Some(commitment) = &self.proof_commitment {
++-            proof.extend_from_slice(commitment.as_bytes());
++-        }
++-        
++-        // Add a simple "proof" by appending HMAC-like construction
++-        use ring::hmac;
++-        let key = hmac::Key::new(hmac::HMAC_SHA256, &random_value);
++-        let tag = hmac::sign(&key, b"vrf-proof");
++-        proof.extend_from_slice(tag.as_ref());
++-        
++-        // Create the final output
++-        Ok(VrfOutput {
++-            random_value,
++-            proof,
++-        })
+++        proof.extend_from_slice(b"zk-proof-"); // Header
+++        proof.extend_from_slice(&output); // Output
+++
+++        info!("Generated ZK proof: {} bytes", proof.len());
+++        Ok(proof)
++     }
++-    
++-    /// Verify a VRF output against a known commitment
++-    pub fn verify(
++-        commitment: &str,
++-        output: &VrfOutput
++-    ) -> Result<bool, Box<dyn Error>> {
++-        // Create a VRF instance from the commitment
++-        let vrf = Self::from_proof_commitment(commitment)?;
++-        
++-        // Generate expected output
++-        let expected = vrf.prove()?;
++-        
++-        // Verify the random value matches
++-        if expected.random_value != output.random_value {
++-            debug!("VRF random value mismatch");
++-            return Ok(false);
++-        }
++-        
++-        // For a simple verification, just check that the proof contains the commitment
++-        let commitment_bytes = commitment.as_bytes();
++-        if !output.proof.windows(commitment_bytes.len()).any(|window| window == commitment_bytes) {
++-            debug!("VRF proof doesn't contain commitment");
+++
+++    /// Verify a zero-knowledge proof for the VRF
+++    pub fn verify_zk_proof(&self, input: &[u8], proof: &[u8]) -> Result<bool, Box<dyn Error>> {
+++        debug!("Verifying ZK proof for VRF");
+++
+++        // Simple verification for the simplified proof format
+++        if proof.len() < 9 || &proof[0..9] != b"zk-proof-" {
+++            warn!("Invalid ZK proof format");
++             return Ok(false);
++         }
++-        
++-        Ok(true)
++-    }
++-}
++ 
++-// Integration with our multi-source proof system
++-impl VerifiableRandomFunction {
++-    /// Create a VRF from a multi-source proof
++-    pub fn from_multi_source_proof(
++-        proof_commitment: &str,
++-        vrf_seed: &str
++-    ) -> Result<Self, Box<dyn Error>> {
++-        // Combine the commitment and seed for better security
++-        let mut combined = String::with_capacity(
++-            proof_commitment.len() + vrf_seed.len() + 1
+++        // Extract output from proof
+++        let output = &proof[9..];
+++
+++        // Verify the output matches what we'd generate
+++        let valid = self.verify(input, output)?;
+++
+++        info!(
+++            "ZK proof verification result: {}",
+++            if valid { "valid" } else { "invalid" }
++         );
++-        combined.push_str(proof_commitment);
++-        combined.push('|');
++-        combined.push_str(vrf_seed);
++-        
++-        Self::from_proof_commitment(&combined)
+++        Ok(valid)
++     }
++-    
++-    /// Generate a leader election (for Byzantine consensus)
++-    pub fn elect_leader(&self, node_count: u64) -> Result<u64, Box<dyn Error>> {
++-        // Simply generate a random value in the range
++-        self.generate_range(node_count)
++-    }
++-    
++-    /// Generate a committee of size 'count' from 'total' nodes
++-    pub fn select_committee(
++-        &self,
++-        committee_size: u64,
++-        total_nodes: u64
++-    ) -> Result<Vec<u64>, Box<dyn Error>> {
++-        if committee_size > total_nodes {
++-            return Err("Committee size cannot exceed total nodes".into());
++-        }
++-        
++-        // Use Fisher-Yates shuffle algorithm with our VRF
++-        let mut nodes: Vec<u64> = (0..total_nodes).collect();
++-        let mut committee = Vec::with_capacity(committee_size as usize);
++-        
++-        for i in 0..committee_size {
++-            // Select a random index from the remaining nodes
++-            let remaining = total_nodes - i;
++-            let random_idx = self.generate_range(remaining)?;
++-            
++-            // Swap the selected index with the last position and take it
++-            let selected = nodes[random_idx as usize];
++-            nodes.swap(random_idx as usize, (total_nodes - i - 1) as usize);
++-            committee.push(selected);
++-        }
++-        
++-        Ok(committee)
+++}
+++
+++/// This creates a deterministic but unpredictable value from a ZK proof seed
+++pub fn generate_vrf_proof(quantum_key: &[u8], input_data: &[u8]) -> Result<String, Box<dyn Error>> {
+++    debug!("Generating VRF proof from quantum key");
+++
+++    // Create VRF instance
+++    let vrf = VerifiableRandomFunction::new(quantum_key);
+++    let output = vrf.generate(input_data)?;
+++
+++    info!(
+++        "Generated VRF proof from quantum key: {} bytes",
+++        output.len()
+++    );
+++    Ok(hex::encode(output))
+++}
+++
+++pub fn verify_vrf_proof(
+++    proof: &str,
+++    quantum_key: &[u8],
+++    input_data: &[u8],
+++) -> Result<bool, Box<dyn Error>> {
+++    debug!("Verifying VRF proof");
+++
+++    let vrf = VerifiableRandomFunction::new(quantum_key);
+++    let output = hex::decode(proof)?;
+++    let result = vrf.verify(input_data, &output)?;
+++
+++    info!(
+++        "VRF proof verification result: {}",
+++        if result { "valid" } else { "invalid" }
+++    );
+++    Ok(result)
+++}
+++
+++#[cfg(test)]
+++mod tests {
+++    use super::*;
+++
+++    #[test]
+++    fn test_vrf() -> Result<(), Box<dyn Error>> {
+++        // Create VRF with test seed
+++        let seed = b"test-vrf-seed";
+++        let vrf = VerifiableRandomFunction::new(seed);
+++
+++        // Generate output for test input
+++        let input = b"test-input";
+++        let output = vrf.generate(input)?;
+++
+++        // Verify the output
+++        let valid = vrf.verify(input, &output)?;
+++        assert!(valid, "VRF verification should succeed");
+++
+++        // Generate and verify ZK proof
+++        let proof = vrf.generate_zk_proof(input)?;
+++        let zk_valid = vrf.verify_zk_proof(input, &proof)?;
+++        assert!(zk_valid, "ZK proof verification should succeed");
+++
+++        Ok(())
++     }
++ }
 diff --git a/src/bin/byzantine_simulator.rs b/src/bin/byzantine_simulator.rs
 index e4bc681..a1ca409 100644
 --- a/src/bin/byzantine_simulator.rs
