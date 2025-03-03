@@ -49,6 +49,9 @@ pqcrypto-sphincsplus = "0.7.0"
 ring = "0.16.20"
 hex = "0.4.3"
 sha3 = "0.10.0"
+chrono = "0.4.40"
+mockito = "1.6.1"
+clap = { version = "4.1", features = ["derive"] }
 [dev-dependencies]
 criterion = { version = "0.4", features = ["async_tokio"] }
 

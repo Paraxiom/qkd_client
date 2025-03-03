@@ -2,11 +2,10 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
-use crate::byzantine::buffer::{ConsensusMessage, MessageType, ReporterEntry, SharedBuffer};
+use crate::byzantine::buffer::{ConsensusMessage, MessageType, SharedBuffer};
 use crate::quantum_auth::hybrid::HybridAuth;
-use crate::quantum_auth::pq::SphincsAuth;
 
 /// Result of a Byzantine consensus round
 #[derive(Debug, Clone)]

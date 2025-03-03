@@ -1,7 +1,8 @@
 pub mod core;
 pub mod integrated;
-use ark_std::error::Error;
+pub mod qkd_vrf;
 use std::vec;
+use ark_std::error::Error;
 // src/vrf/mod.rs
 use crate::quantum_auth::hybrid::HybridSignature;
 use sha3::{Digest, Sha3_512};

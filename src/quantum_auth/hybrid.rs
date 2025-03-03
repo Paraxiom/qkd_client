@@ -7,7 +7,7 @@ use tracing::{debug, info};
 use crate::quantum_auth::pq::SphincsAuth;
 use rand::rngs::OsRng;
 use rand::RngCore;
-use ring::signature::{self, Ed25519KeyPair, KeyPair, Signature};
+use ring::signature::{self, Ed25519KeyPair, KeyPair};
 
 /// A hybrid authentication system that combines classical Ed25519 signatures
 /// with quantum-resistant SPHINCS+ signatures for maximum security during
