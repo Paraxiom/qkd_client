@@ -27,7 +27,7 @@ impl QuantumVRF {
         let mut hasher = Sha3_512::new();
         hasher.update(input);
         hasher.update(quantum_key);
-        let seed = hasher.finalize();
+        let _seed = hasher.finalize();
 
         // 🔹 Quantum-Safe Signing Placeholder (Replace with SPHINCS+, Falcon, or other PQC)
         let signature = vec![0u8; 64]; // Placeholder: Replace with actual quantum signature
@@ -52,7 +52,7 @@ impl QuantumVRF {
         let mut hasher = Sha3_512::new();
         hasher.update(input);
         hasher.update(quantum_key);
-        let seed = hasher.finalize();
+        let _seed = hasher.finalize();
 
         // Verify the signature (proof)
         // if !self.signer.verify(&seed, proof)? {

@@ -1,7 +1,6 @@
 // src/zk/multi_source_proof.rs
 use crate::byzantine::buffer::ReporterEntry;
 use serde_json::{json, Value};
-use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
