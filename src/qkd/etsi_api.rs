@@ -12,6 +12,12 @@ use tracing::{debug, error, info, warn};
 /// Based on ETSI GS QKD 014 standard
 /// This client provides access to QKD key management services
 
+#[derive(Debug, Clone)]
+pub enum Side {
+    Alice,
+    Bob,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QKDKey {
     pub key_id: String,
@@ -90,26 +96,42 @@ impl ETSIClient {
     /// 
     /// # Arguments
     /// * `device_type` - Type of QKD device (Toshiba, IDQ, etc.)
+    /// * `side` - The side of the QKD device (Alice or Bob)
     /// * `cert_path` - Path to TLS certificate for secure communication
     /// * `auth_token` - Optional authentication token for API access
-    pub fn new(device_type: DeviceType, cert_path: &Path, auth_token: Option<String>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(device_type: DeviceType, side: Side, cert_path: &Path, auth_token: Option<String>) -> Result<Self, Box<dyn Error>> {
         let base_url = match device_type {
-            DeviceType::Toshiba => "https://toshiba-qkd.example.com/api/v1",
-            DeviceType::IDQ => "https://idq-qkd.example.com/api/v1",
-            DeviceType::Basejump => "https://basejump-qkd.example.com/api/v1",
+            DeviceType::Toshiba => match side {
+                Side::Alice => "https://192.168.0.4/api/v1",
+                Side::Bob => "https://192.168.0.2/api/v1",
+            },
+            DeviceType::IDQ => match side {
+                Side::Alice => "https://192.168.101.202/api/v1",
+                Side::Bob => "https://192.168.101.207/api/v1",
+            },
+            DeviceType::Basejump => match side {
+                Side::Alice => "https://192.168.0.101/api/v1",
+                Side::Bob => "https://192.168.101.102/api/v1",
+            },
             DeviceType::Simulated => "http://localhost:8000/api/v1",
         };
         
         let mut client_builder = Client::builder();
         
-        // Load certificate if the path exists
-        if cert_path.exists() {
-            debug!("Loading certificate from {:?}", cert_path);
-            let cert_data = fs::read(cert_path)?;
-            let cert = Certificate::from_pem(&cert_data)?;
-            client_builder = client_builder.add_root_certificate(cert);
+        // Load certificate if needed and if the path exists
+        if matches!(device_type, DeviceType::Simulated) {
+            debug!("Using simulated device, skipping certificate loading");
+            // For simulated devices, we can also disable certificate verification
+            client_builder = client_builder.danger_accept_invalid_certs(true);
         } else {
-            warn!("Certificate path {:?} does not exist, proceeding without certificate", cert_path);
+            if cert_path.exists() {
+                debug!("Loading certificate from {:?}", cert_path);
+                let cert_data = fs::read(cert_path)?;
+                let cert = Certificate::from_pem(&cert_data)?;
+                client_builder = client_builder.add_root_certificate(cert);
+            } else {
+                warn!("Certificate path {:?} does not exist, proceeding without certificate", cert_path);
+            }
         }
         
         // Create client with certificate
@@ -143,6 +165,11 @@ impl ETSIClient {
                     return Ok(key.clone());
                 }
             }
+        }
+        
+        // For simulated device, generate a simulated key instead of making HTTP request
+        if matches!(self.device_type, DeviceType::Simulated) {
+            return self.generate_simulated_key(key_size, dest_id, None).await;
         }
         
         // Prepare request based on device type
@@ -243,6 +270,27 @@ impl ETSIClient {
             }
         }
         
+        // For simulated device, regenerate the same key deterministically
+        if matches!(self.device_type, DeviceType::Simulated) {
+            // Parse the key_id to extract the necessary information
+            // The key_id format is expected to be: "{dest_id}-{key_size}-{uuid}"
+            let parts: Vec<&str> = key_id.split('-').collect();
+            
+            if parts.len() >= 3 {
+                // Instead of trying to parse parts of the UUID, we need to match the original format
+                // Find the actual key size part, which should be the part directly before the UUID segments
+                let dest_id = parts[0].to_string();
+                let key_size = parts[1].parse::<usize>().unwrap_or(32);  // Always use the size after dest_id
+                
+                // Use the exact key_id to ensure deterministic generation
+                return self.generate_simulated_key(key_size, &dest_id, Some(key_id)).await;
+            } else {
+                // Fallback for malformed key_ids
+                warn!("Malformed key_id format: {}, using as destination with default size", key_id);
+                return self.generate_simulated_key(32, key_id, Some(key_id)).await;
+            }
+        }
+        
         // Prepare request based on device type
         let endpoint = match self.device_type {
             DeviceType::Toshiba => format!("{}/keys/{}", self.base_url, key_id),
@@ -316,6 +364,17 @@ impl ETSIClient {
     pub async fn check_key_status(&self, key_id: &str) -> Result<KeyStatus, Box<dyn Error>> {
         debug!("Checking status for key: {}", key_id);
         
+        // For simulated device, check our cache
+        if matches!(self.device_type, DeviceType::Simulated) {
+            let cache = self.key_cache.lock().await;
+            for key in cache.iter() {
+                if key.key_id == key_id {
+                    return Ok(key.metadata.status.clone());
+                }
+            }
+            return Err(format!("Simulated key not found: {}", key_id).into());
+        }
+        
         // Prepare request based on device type
         let endpoint = match self.device_type {
             DeviceType::Toshiba => format!("{}/keys/{}/status", self.base_url, key_id),
@@ -379,6 +438,24 @@ impl ETSIClient {
     /// * `key_id` - ID of the key to delete
     pub async fn delete_key(&self, key_id: &str) -> Result<bool, Box<dyn Error>> {
         debug!("Deleting key: {}", key_id);
+        
+        // For simulated device, just remove from cache
+        if matches!(self.device_type, DeviceType::Simulated) {
+            // Update cache
+            {
+                let mut cache = self.key_cache.lock().await;
+                let initial_len = cache.len();
+                cache.retain(|k| k.key_id != key_id);
+                let removed = initial_len - cache.len();
+                if removed > 0 {
+                    info!("Successfully deleted simulated key: {}", key_id);
+                    return Ok(true);
+                } else {
+                    warn!("Simulated key not found for deletion: {}", key_id);
+                    return Ok(false);
+                }
+            }
+        }
         
         // Prepare request based on device type
         let endpoint = match self.device_type {
@@ -461,6 +538,12 @@ impl ETSIClient {
     pub async fn get_available_key_size(&self) -> Result<usize, Box<dyn Error>> {
         debug!("Checking available key size");
         
+        // For simulated device, just return a standard value
+        if matches!(self.device_type, DeviceType::Simulated) {
+            info!("Simulated device returning default available key size of 1024 bytes");
+            return Ok(1024); // Return a default value for simulated devices
+        }
+        
         // Prepare request based on device type
         let endpoint = match self.device_type {
             DeviceType::Toshiba => format!("{}/keys/available", self.base_url),
@@ -508,6 +591,90 @@ impl ETSIClient {
         cache.clear();
         debug!("Key cache cleared");
     }
+    
+    /// Generate a simulated QKD key for testing
+    ///
+    /// # Arguments
+    /// * `key_size` - Size of the requested key in bytes
+    /// * `dest_id` - Destination ID
+    /// * `specific_key_id` - If provided, use this exact key ID instead of generating a new one
+    async fn generate_simulated_key(&self, key_size: usize, dest_id: &str, specific_key_id: Option<&str>) -> Result<QKDKey, Box<dyn Error>> {
+        // Create a deterministic but unique key ID based on destination ID and size
+        let key_id = if let Some(id) = specific_key_id {
+            // Use the provided key ID (this ensures Bob generates the same key as Alice)
+            id.to_string()
+        } else {
+            // Generate a new key ID (used by Alice)
+            let unique_id = format!("{}-{}", dest_id, key_size);
+            format!("{}-{}", unique_id, uuid::Uuid::new_v4())
+        };
+        
+        // Extract original seed information from the key_id
+        // This ensures the same key bytes are generated regardless of whether it's a new key or
+        // we're regenerating an existing key
+        let parts: Vec<&str> = key_id.split('-').collect();
+        let seed_parts = if parts.len() >= 3 {
+            // The seed should be based on the destination and size, not the UUID
+            if parts.len() > 3 {
+                // Handle case where destination ID contains hyphens
+                let size_index = parts.len() - 2;
+                let dest = parts[0..size_index].join("-");
+                let size = parts[size_index];
+                format!("{}-{}", dest, size)
+            } else {
+                // Simple case: destination-size-uuid
+                format!("{}-{}", parts[0], parts[1])
+            }
+        } else {
+            // Fallback, use the whole key ID
+            key_id.clone()
+        };
+        
+        // Generate deterministic key bytes based on the seed parts
+        let mut key_bytes = vec![0u8; key_size];
+        
+        // Use a simple deterministic algorithm to generate key bytes
+        // This ensures that the same key_id always produces the same key bytes
+        let seed = seed_parts.as_bytes().iter().fold(0u64, |acc, &x| acc.wrapping_add(x as u64));
+        
+        for i in 0..key_size {
+            // Simple PRNG formula based on the position and seed
+            let value = ((seed + i as u64).wrapping_mul(0x5DEECE66Du64).wrapping_add(0xBu64)) % 256;
+            key_bytes[i] = value as u8;
+        }
+        
+        // Create simulated key
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        
+        let qkd_key = QKDKey {
+            key_id,
+            key_bytes,
+            timestamp: now,
+            metadata: KeyMetadata {
+                source: "simulated".to_string(),
+                qber: 0.01, // Simulated QBER of 1%
+                key_size,
+                status: KeyStatus::Available,
+            },
+        };
+        
+        // Add to cache
+        {
+            let mut cache = self.key_cache.lock().await;
+            cache.push(qkd_key.clone());
+            
+            // Limit cache size
+            if cache.len() > 50 {
+                cache.remove(0);
+            }
+        }
+        
+        info!("Generated simulated key: {}, size: {}", qkd_key.key_id, qkd_key.metadata.key_size);
+        Ok(qkd_key)
+    }
 }
 
 // Unit tests
@@ -521,6 +688,7 @@ mod tests {
         // Create client with simulated device
         let client = ETSIClient::new(
             DeviceType::Simulated,
+            Side::Alice,
             &PathBuf::from("nonexistent-cert.pem"),
             None
         )?;
@@ -536,6 +704,7 @@ mod tests {
         // Create client
         let client = ETSIClient::new(
             DeviceType::Simulated,
+            Side::Bob,
             &PathBuf::from("nonexistent-cert.pem"),
             None
         )?;
@@ -583,5 +752,58 @@ mod tests {
         } else {
             panic!("Expected Error variant");
         }
+    }
+    
+    #[tokio::test]
+    async fn test_simulated_key_generation() -> Result<(), Box<dyn Error>> {
+        // Create simulated client
+        let client = ETSIClient::new(
+            DeviceType::Simulated,
+            Side::Alice,
+            &PathBuf::from("nonexistent-cert.pem"),
+            None
+        )?;
+        
+        // Generate a simulated key
+        let key = client.get_key_alice(32, "test-destination", None).await?;
+        
+        // Verify it has the right size
+        assert_eq!(key.metadata.key_size, 32);
+        
+        // Delete the key
+        let result = client.delete_key(&key.key_id).await?;
+        assert!(result, "Key deletion should return true");
+        
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_key_consistency() -> Result<(), Box<dyn Error>> {
+        // Create two clients for Alice and Bob
+        let alice_client = ETSIClient::new(
+            DeviceType::Simulated,
+            Side::Alice,
+            &PathBuf::from("nonexistent-cert.pem"),
+            None
+        )?;
+        
+        let bob_client = ETSIClient::new(
+            DeviceType::Simulated,
+            Side::Bob,
+            &PathBuf::from("nonexistent-cert.pem"),
+            None
+        )?;
+        
+        // Alice generates a key
+        let alice_key = alice_client.get_key_alice(32, "test-dest", None).await?;
+        
+        // Bob retrieves the same key
+        let bob_key = bob_client.get_key_bob(&alice_key.key_id).await?;
+        
+        // Verify the keys are identical
+        assert_eq!(alice_key.key_bytes, bob_key.key_bytes, "Key bytes should be identical between Alice and Bob");
+        assert_eq!(alice_key.key_id, bob_key.key_id, "Key IDs should match");
+        
+        Ok(())
     }
 }

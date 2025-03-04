@@ -1,5 +1,5 @@
 // src/vrf/qkd_vrf.rs
-use crate::qkd::etsi_api::{ETSIClient, DeviceType};
+use crate::qkd::etsi_api::{ETSIClient, DeviceType, Side};
 use crate::vrf::core::QuantumVRF;
 use std::error::Error;
 use std::path::Path;
@@ -11,7 +11,11 @@ pub struct QKDVerifiableRandomFunction {
 
 impl QKDVerifiableRandomFunction {
     pub fn new(vrf: QuantumVRF, device_type: DeviceType, cert_path: &Path) -> Result<Self, Box<dyn Error>> {
-        let etsi_client = ETSIClient::new(device_type, cert_path, None)?;
+        // For a VRF implementation, we'll use Alice as the default side
+        // Alice is typically the key generator in QKD protocols
+        let side = Side::Alice;
+        
+        let etsi_client = ETSIClient::new(device_type, side, cert_path, None)?;
         
         Ok(Self {
             vrf,

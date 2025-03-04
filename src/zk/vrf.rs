@@ -1,8 +1,4 @@
-use serde::{Deserialize, Serialize};
-use std::cmp::min;
 use std::error::Error;
-use std::fs;
-use std::process::Command;
 use tracing::{debug, info, warn};
 
 /// Verifiable Random Function with zero-knowledge capabilities

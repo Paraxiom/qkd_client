@@ -1,7 +1,7 @@
 // src/zk/multi_source_generator.rs
 use std::error::Error;
 use std::sync::Arc;
-use tracing::{debug, info};
+use tracing::info;
 
 use crate::byzantine::buffer::{ReporterEntry, SharedBuffer};
 use crate::byzantine::consensus::{ByzantineConsensus, ConsensusResult};

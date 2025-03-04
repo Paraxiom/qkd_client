@@ -1,6 +1,4 @@
 // src/quantum_auth/pq_auth.rs
-use crate::quantum_auth::pq::sphincs::SphincsAuth;
-use std::error::Error;
 
 // pub struct SphincsAuth {
 //     // Implementation details

@@ -80,8 +80,9 @@ impl VRFBasedConsensus {
         let response = VRFResponse {
             output: vrf_output.to_vec(),
             vrf_proof: vrf_proof.to_vec(),
+            zk_proof: String::new(), // Empty string for ZK proof when not used
+            public_inputs: serde_json::json!({}), // Empty JSON object for public inputs
         };
-
         let start = std::time::Instant::now();
         let vrf_valid = self.vrf.verify_with_proof(&input, &response, public_key)?;
 
