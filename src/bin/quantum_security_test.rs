@@ -293,12 +293,22 @@ fn generate_random_message(size: usize) -> Vec<u8> {
 }
 
 /// Estimate time for Grover's algorithm search
+/// Estimate time for Grover's algorithm search
 fn estimate_grover_search_time(bit_length: usize) -> Duration {
     // This is a simplified model - in reality, it would depend on many factors
     // Grover's algorithm requires O(sqrt(N)) operations for N-bit search space
     
-    // For a 256-bit key, we need approximately 2^128 operations
-    let operations = (1u128 << (bit_length / 2)) as f64;
+    // Calculate number of operations needed
+    // We need to handle large bit lengths safely to avoid overflow
+    
+    // For bit lengths > 256, we would need more than 2^128 operations,
+    // which exceeds what we can represent, so cap it
+    let effective_bit_length = std::cmp::min(bit_length, 256);
+    
+    // Calculate sqrt(2^bit_length) = 2^(bit_length/2)
+    // Use f64 for the calculation to avoid integer overflow
+    let half_bits = effective_bit_length / 2;
+    let operations = 2.0f64.powi(half_bits as i32);
     
     // Assume 1 billion operations per second on a quantum computer
     let ops_per_second = 1_000_000_000f64;
@@ -306,7 +316,7 @@ fn estimate_grover_search_time(bit_length: usize) -> Duration {
     // Calculate seconds
     let seconds = operations / ops_per_second;
     
-    // Convert to Duration
+    // Convert to Duration, capping at u64::MAX if needed
     if seconds > (u64::MAX as f64) {
         Duration::from_secs(u64::MAX)
     } else {
