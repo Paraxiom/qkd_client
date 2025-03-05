@@ -1,431 +1,310 @@
 // src/qkd/key_manager.rs
-use crate::qkd::etsi_api::{ETSIClient, QKDKey, KeyStatus, Side, DeviceType};
+use crate::qkd::etsi_api::{DeviceType, ETSIClient, QKDKey, KeyStatus, Side};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 use tokio::sync::Mutex;
-use tracing::{debug, info, warn, error};
-use std::time::{Duration, Instant, SystemTime};
+use tracing::{debug, info, warn};
 
-/// Quantum Key usage tracking record
-#[derive(Debug, Clone)]
-pub struct KeyUsageRecord {
-    pub key_id: String,
-    pub used_at: SystemTime,
-    pub used_by: String,
-    pub purpose: String,
-    pub key_size: usize,
-    pub qber: f32,
-}
-
-/// Secure quantum key manager that ensures proper key usage and lifecycle
-pub struct SecureKeyManager {
-    etsi_client: ETSIClient,
-    /// Map of key_id to keys marked as consumed but not yet deleted
-    pending_deletion: Arc<Mutex<HashMap<String, Instant>>>,
-    /// History of key usage for auditing
-    usage_history: Arc<Mutex<Vec<KeyUsageRecord>>>,
-    /// Maximum time a key can remain in the cache before being rotated
-    max_key_age: Duration,
-    /// Key history record retention period
-    history_retention: Duration,
-}
-
-#[derive(Debug, Clone, PartialEq)]
+/// Key usage purpose enum
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum KeyUsagePurpose {
+    /// Key used for encryption
     Encryption,
+    /// Key used for authentication
     Authentication,
-    Signing,
+    /// Key used for VRF (Verifiable Random Function)
     VRF,
-    ZeroKnowledgeProof,
-    KeyEncapsulation,
-    ByzantineConsensus,
-    Other(String),
 }
 
-impl KeyUsagePurpose {
-    fn as_str(&self) -> String {
-        match self {
-            Self::Encryption => "encryption".to_string(),
-            Self::Authentication => "authentication".to_string(),
-            Self::Signing => "signing".to_string(),
-            Self::VRF => "verifiable_random_function".to_string(),
-            Self::ZeroKnowledgeProof => "zero_knowledge_proof".to_string(),
-            Self::KeyEncapsulation => "key_encapsulation".to_string(),
-            Self::ByzantineConsensus => "byzantine_consensus".to_string(),
-            Self::Other(purpose) => purpose.clone(),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum KeyManagerError {
-    KeyNotAvailable,
-    KeyAlreadyUsed(String),
-    KeyExpired(String),
-    EtsiClientError(Box<dyn Error + Send + Sync>),
-    InternalError(String),
-}
-
-impl std::fmt::Display for KeyManagerError {
+impl std::fmt::Display for KeyUsagePurpose {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::KeyNotAvailable => write!(f, "No suitable quantum key available"),
-            Self::KeyAlreadyUsed(key_id) => write!(f, "Key {} has already been used", key_id),
-            Self::KeyExpired(key_id) => write!(f, "Key {} has expired", key_id),
-            Self::EtsiClientError(e) => write!(f, "ETSI client error: {}", e),
-            Self::InternalError(msg) => write!(f, "Internal key manager error: {}", msg),
+            KeyUsagePurpose::Encryption => write!(f, "encryption"),
+            KeyUsagePurpose::Authentication => write!(f, "authentication"),
+            KeyUsagePurpose::VRF => write!(f, "verifiable_random_function"),
         }
     }
 }
 
-impl std::error::Error for KeyManagerError {}
+/// Secure Key Manager for QKD Keys
+pub struct SecureKeyManager {
+    // QKD client for retrieving keys
+    client: ETSIClient,
+    // Map of keys in use, keyed by key_id
+    keys_in_use: Arc<Mutex<HashMap<String, (KeyUsagePurpose, String)>>>,
+    // Usage statistics by purpose
+    usage_stats: Arc<Mutex<HashMap<KeyUsagePurpose, usize>>>,
+    // Last access time by key_id
+    last_access: Arc<Mutex<HashMap<String, SystemTime>>>,
+    // Maximum key age before expiration
+    max_key_age: Duration,
+}
 
 impl SecureKeyManager {
-    /// Create a new secure key manager for Alice (key generator)
-    pub fn new_alice(device_type: DeviceType, cert_path: &Path) -> Result<Self, Box<dyn Error>> {
-        let etsi_client = ETSIClient::new(device_type, Side::Alice, cert_path, None)?;
-        
-        Ok(Self {
-            etsi_client,
-            pending_deletion: Arc::new(Mutex::new(HashMap::new())),
-            usage_history: Arc::new(Mutex::new(Vec::new())),
-            max_key_age: Duration::from_secs(3600), // Default: 1 hour max age
-            history_retention: Duration::from_secs(86400 * 30), // Default: 30 days retention
-        })
-    }
-    
-    /// Create a new secure key manager for Bob (key receiver)
-    pub fn new_bob(device_type: DeviceType, cert_path: &Path) -> Result<Self, Box<dyn Error>> {
-        let etsi_client = ETSIClient::new(device_type, Side::Bob, cert_path, None)?;
-        
-        Ok(Self {
-            etsi_client,
-            pending_deletion: Arc::new(Mutex::new(HashMap::new())),
-            usage_history: Arc::new(Mutex::new(Vec::new())),
-            max_key_age: Duration::from_secs(3600), // Default: 1 hour max age
-            history_retention: Duration::from_secs(86400 * 30), // Default: 30 days retention
-        })
-    }
-
-    /// Create a new secure key manager with custom settings
-    pub fn with_settings(
-        etsi_client: ETSIClient,
-        max_key_age: Duration,
-        history_retention: Duration,
-    ) -> Self {
+    /// Create a new key manager with the provided client
+    pub fn new(client: ETSIClient) -> Self {
         Self {
-            etsi_client,
-            pending_deletion: Arc::new(Mutex::new(HashMap::new())),
-            usage_history: Arc::new(Mutex::new(Vec::new())),
-            max_key_age,
-            history_retention,
+            client,
+            keys_in_use: Arc::new(Mutex::new(HashMap::new())),
+            usage_stats: Arc::new(Mutex::new(HashMap::new())),
+            last_access: Arc::new(Mutex::new(HashMap::new())),
+            max_key_age: Duration::from_secs(3600), // Default 1 hour max age
         }
     }
 
-    /// Get a quantum key for use - this marks the key as used for the specified purpose
+    /// Create a new key manager for Alice with the given device type and certificates
+    pub fn new_alice(
+        device_type: DeviceType,
+        cert_path: &Path,
+        root_cert_path: Option<&Path>,
+    ) -> Result<Self, Box<dyn Error>> {
+        let client = ETSIClient::new(
+            device_type,
+            Side::Alice,
+            cert_path,
+            root_cert_path,
+            None,
+        )?;
+        
+        Ok(Self::new(client))
+    }
+
+    /// Create a new key manager for Bob with the given device type and certificates
+    pub fn new_bob(
+        device_type: DeviceType,
+        cert_path: &Path,
+        root_cert_path: Option<&Path>,
+    ) -> Result<Self, Box<dyn Error>> {
+        let client = ETSIClient::new(
+            device_type,
+            Side::Bob,
+            cert_path,
+            root_cert_path,
+            None,
+        )?;
+        
+        Ok(Self::new(client))
+    }
+
+    /// Get a new key for Alice for the specified purpose
+    ///
+    /// # Arguments
+    /// * `key_size` - Size of the requested key in bytes
+    /// * `dest_id` - Destination ID (Bob's identifier)
+    /// * `purpose` - Purpose of the key
+    /// * `requester_id` - ID of the entity requesting the key
     pub async fn get_key(
         &self,
         key_size: usize,
         dest_id: &str,
         purpose: KeyUsagePurpose,
         requester_id: &str,
-    ) -> Result<QKDKey, KeyManagerError> {
-        debug!(
-            "Requesting quantum key of size {}B for {} by {}",
-            key_size,
-            purpose.as_str(),
-            requester_id
-        );
-
-        // Request a key from the QKD device
-        let key = match self.etsi_client.get_key_alice(key_size, dest_id, None).await {
-            Ok(k) => k,
-            Err(e) => {
-                let err_str = e.to_string();
-                return Err(KeyManagerError::InternalError(err_str));
-            }
-        };
-
-        // Verify key status
-        if key.metadata.status != KeyStatus::Available {
-            return Err(KeyManagerError::KeyNotAvailable);
+    ) -> Result<QKDKey, Box<dyn Error>> {
+        // Get key from QKD device
+        let key = self.client.get_key_alice(key_size, dest_id, None).await?;
+        
+        // Mark key as in use for this purpose
+        {
+            let mut keys_in_use = self.keys_in_use.lock().await;
+            keys_in_use.insert(key.key_id.clone(), (purpose, requester_id.to_string()));
+            
+            // Update usage statistics
+            let mut stats = self.usage_stats.lock().await;
+            *stats.entry(purpose).or_insert(0) += 1;
+            
+            // Update last access time
+            let mut last_access = self.last_access.lock().await;
+            last_access.insert(key.key_id.clone(), SystemTime::now());
         }
-
-        // Record key usage
-        self.record_key_usage(&key.key_id, requester_id, &purpose.as_str(), key.metadata.key_size, key.metadata.qber).await;
-
-        info!(
-            "Allocated quantum key {} ({} bytes) to {} for {}",
-            key.key_id,
-            key.metadata.key_size,
-            requester_id,
-            purpose.as_str()
-        );
-
+        
+        info!("Allocated quantum key {} ({} bytes) to {} for {}", 
+            key.key_id, key.metadata.key_size, requester_id, purpose);
+        
         Ok(key)
     }
-
-    /// Get a specific quantum key by ID - for verification purposes
+    
+    /// Get a specific key by ID for Bob
+    ///
+    /// # Arguments
+    /// * `key_id` - ID of the key to retrieve
+    /// * `purpose` - Purpose of the key
+    /// * `requester_id` - ID of the entity requesting the key
     pub async fn get_key_by_id(
         &self,
         key_id: &str,
         purpose: KeyUsagePurpose,
         requester_id: &str,
-    ) -> Result<QKDKey, KeyManagerError> {
-        debug!(
-            "Retrieving specific quantum key {} for {} by {}",
-            key_id,
-            purpose.as_str(),
-            requester_id
-        );
-
-        // Check if this key has already been used
-        if self.is_key_used(key_id).await {
-            return Err(KeyManagerError::KeyAlreadyUsed(key_id.to_string()));
-        }
-
-        // Get the key from the QKD device
-        let key = match self.etsi_client.get_key_bob(key_id).await {
-            Ok(k) => k,
-            Err(e) => {
-                let err_str = e.to_string();
-                return Err(KeyManagerError::InternalError(err_str));
+    ) -> Result<QKDKey, Box<dyn Error>> {
+        // Check if the key is already in use
+        {
+            let keys_in_use = self.keys_in_use.lock().await;
+            if let Some((existing_purpose, existing_requester)) = keys_in_use.get(key_id) {
+                if *existing_purpose == purpose && existing_requester == requester_id {
+                    // Same purpose and requester, might be a retry - allow it
+                    debug!("Key {} already in use by the same requester, allowing retry", key_id);
+                } else {
+                    // Key already in use for a different purpose or by a different requester
+                    return Err(format!("Key {} has already been used", key_id).into());
+                }
             }
-        };
-
-        // Verify key status
-        if key.metadata.status != KeyStatus::Available {
-            return Err(KeyManagerError::KeyNotAvailable);
         }
-
-        // Record key usage
-        self.record_key_usage(&key.key_id, requester_id, &purpose.as_str(), key.metadata.key_size, key.metadata.qber).await;
-
-        info!(
-            "Retrieved quantum key {} ({} bytes) for {} by {}",
-            key.key_id,
-            key.metadata.key_size,
-            purpose.as_str(),
-            requester_id
-        );
-
+        
+        // Get key from QKD device
+        let key = self.client.get_key_bob(key_id).await?;
+        
+        // Mark key as in use for this purpose
+        {
+            let mut keys_in_use = self.keys_in_use.lock().await;
+            keys_in_use.insert(key.key_id.clone(), (purpose, requester_id.to_string()));
+            
+            // Update usage statistics
+            let mut stats = self.usage_stats.lock().await;
+            *stats.entry(purpose).or_insert(0) += 1;
+            
+            // Update last access time
+            let mut last_access = self.last_access.lock().await;
+            last_access.insert(key.key_id.clone(), SystemTime::now());
+        }
+        
+        info!("Retrieved quantum key {} ({} bytes) for {} by {}", 
+            key.key_id, key.metadata.key_size, purpose, requester_id);
+        
         Ok(key)
     }
-
-    /// Mark a key as consumed and schedule it for deletion
-    pub async fn consume_key(&self, key_id: &str) -> Result<(), KeyManagerError> {
-        debug!("Marking key {} as consumed", key_id);
-
-        // Add to pending deletion
+    
+    /// Mark a key as consumed (will prevent reuse)
+    ///
+    /// # Arguments
+    /// * `key_id` - ID of the key to mark as consumed
+    pub async fn consume_key(&self, key_id: &str) -> Result<(), Box<dyn Error>> {
+        // Remove from in-use map
         {
-            let mut pending = self.pending_deletion.lock().await;
-            pending.insert(key_id.to_string(), Instant::now());
+            let mut keys_in_use = self.keys_in_use.lock().await;
+            keys_in_use.remove(key_id);
         }
-
-        // Instead of spawning a task, just try to delete immediately
-        match self.etsi_client.delete_key(key_id).await {
-            Ok(true) => {
-                info!("Successfully deleted consumed key: {}", key_id);
-                // Remove from pending deletion
-                let mut pending = self.pending_deletion.lock().await;
-                pending.remove(key_id);
-            }
-            Ok(false) => {
-                warn!("Key {} not found for deletion - may already be deleted", key_id);
-                // Remove from pending deletion anyway
-                let mut pending = self.pending_deletion.lock().await;
-                pending.remove(key_id);
-            }
-            Err(e) => {
-                // Key remains in pending_deletion for retry later
-                let err_str = e.to_string();
-                warn!("Failed to delete key {}: {}", key_id, err_str);
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Check if a key has been used
-    async fn is_key_used(&self, key_id: &str) -> bool {
-        // Check pending deletion
-        {
-            let pending = self.pending_deletion.lock().await;
-            if pending.contains_key(key_id) {
-                return true;
-            }
-        }
-
-        // Check usage history
-        {
-            let history = self.usage_history.lock().await;
-            for record in history.iter() {
-                if record.key_id == key_id {
-                    return true;
-                }
-            }
-        }
-
-        false
-    }
-
-    /// Record key usage for auditing
-    async fn record_key_usage(&self, key_id: &str, requester_id: &str, purpose: &str, key_size: usize, qber: f32) {
-        let usage_record = KeyUsageRecord {
-            key_id: key_id.to_string(),
-            used_at: SystemTime::now(),
-            used_by: requester_id.to_string(),
-            purpose: purpose.to_string(),
-            key_size,
-            qber,
-        };
-
-        let mut history = self.usage_history.lock().await;
-        history.push(usage_record);
-
-        // Prune old records
-        let now = SystemTime::now();
-        history.retain(|record| {
-            match now.duration_since(record.used_at) {
-                Ok(duration) => duration < self.history_retention,
-                Err(_) => true, // Keep records with clock issues
-            }
-        });
-    }
-
-    /// Maintenance task to clean up expired keys and retry failed deletions
-    pub async fn run_maintenance(&self) -> Result<(), KeyManagerError> {
-        debug!("Running key manager maintenance task");
-
-        // Retry deleting keys that failed previously
-        let pending_keys: Vec<String> = {
-            let pending = self.pending_deletion.lock().await;
-            pending.keys().cloned().collect()
-        };
         
-        for key_id in pending_keys {
-            // Try to delete the key
-            match self.etsi_client.delete_key(&key_id).await {
-                Ok(true) => {
-                    info!("Successfully deleted key on retry: {}", key_id);
-                    let mut pending = self.pending_deletion.lock().await;
-                    pending.remove(&key_id);
-                }
-                Ok(false) => {
-                    warn!("Key {} not found for deletion on retry", key_id);
-                    let mut pending = self.pending_deletion.lock().await;
-                    pending.remove(&key_id);
-                }
-                Err(e) => {
-                    let err_str = e.to_string();
-                    warn!("Failed to delete key {} on retry: {}", key_id, err_str);
-                    // We'll try again next time
-                }
-            }
+        // Delete from QKD device
+        let result = self.client.delete_key(key_id).await?;
+        
+        if result {
+            info!("Successfully deleted consumed key: {}", key_id);
+        } else {
+            warn!("Failed to delete consumed key: {}", key_id);
         }
-
-        // Clean up history records beyond retention period
-        {
-            let now = SystemTime::now();
-            let mut history = self.usage_history.lock().await;
-            let initial_len = history.len();
-            
-            history.retain(|record| {
-                match now.duration_since(record.used_at) {
-                    Ok(duration) => duration < self.history_retention,
-                    Err(_) => true, // Keep records with clock issues
-                }
-            });
-            
-            let removed = initial_len - history.len();
-            if removed > 0 {
-                debug!("Cleaned up {} expired key usage records", removed);
-            }
-        }
-
-        // Force clear the ETSIClient's cache to ensure it gets fresh keys
-        self.etsi_client.clear_cache().await;
-
+        
         Ok(())
     }
-
-    /// Get available quantum key size
-    pub async fn get_available_key_size(&self) -> Result<usize, KeyManagerError> {
-        match self.etsi_client.get_available_key_size().await {
-            Ok(size) => Ok(size),
-            Err(e) => {
-                let err_str = e.to_string();
-                Err(KeyManagerError::InternalError(err_str))
-            }
-        }
-    }
-
+    
     /// Get key usage statistics
-    pub async fn get_usage_statistics(&self) -> HashMap<String, usize> {
-        let mut stats = HashMap::new();
-        
-        let history = self.usage_history.lock().await;
-        for record in history.iter() {
-            *stats.entry(record.purpose.clone()).or_insert(0) += 1;
-        }
-        
-        stats
+    pub async fn get_usage_statistics(&self) -> HashMap<KeyUsagePurpose, usize> {
+        let stats = self.usage_stats.lock().await;
+        stats.clone()
     }
-
-    /// Get average QBER for keys used
-    pub async fn get_average_qber(&self) -> f32 {
-        let history = self.usage_history.lock().await;
+    
+    /// Expire old keys based on max_key_age
+    pub async fn expire_old_keys(&self) -> Result<usize, Box<dyn Error>> {
+        let now = SystemTime::now();
+        let mut expired_count = 0;
         
-        if history.is_empty() {
-            return 0.0;
+        // Find keys to expire
+        let keys_to_expire = {
+            let last_access = self.last_access.lock().await;
+            let mut to_expire = Vec::new();
+            
+            for (key_id, access_time) in last_access.iter() {
+                if let Ok(elapsed) = now.duration_since(*access_time) {
+                    if elapsed > self.max_key_age {
+                        to_expire.push(key_id.clone());
+                    }
+                }
+            }
+            
+            to_expire
+        };
+        
+        // Expire the keys
+        for key_id in keys_to_expire {
+            if let Ok(()) = self.consume_key(&key_id).await {
+                expired_count += 1;
+            }
         }
         
-        let total_qber: f32 = history.iter().map(|r| r.qber).sum();
-        total_qber / history.len() as f32
-    }
-
-    /// Run maintenance once
-    pub async fn perform_maintenance(&self) {
-        match self.run_maintenance().await {
-            Ok(_) => debug!("Key manager maintenance completed successfully"),
-            Err(e) => error!("Key manager maintenance error: {}", e),
-        }
+        debug!("Expired {} old keys", expired_count);
+        Ok(expired_count)
     }
 }
 
-// Unit tests
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::path::PathBuf;
-
+    
     #[tokio::test]
-    async fn test_key_manager_basics() -> Result<(), Box<dyn Error>> {
-        // Create key manager with simulated device
-        let key_manager = SecureKeyManager::new_alice(
+    async fn test_key_allocation() -> Result<(), Box<dyn Error>> {
+        // Create simulated client
+        let client = ETSIClient::new(
             DeviceType::Simulated,
-            &PathBuf::from("certificate/default_cert.pem"),
+            Side::Alice,
+            &PathBuf::from("nonexistent-cert.pem"),
+            None,
+            None,
         )?;
         
-        // Get a key for encryption
-        let key = key_manager.get_key(
-            32, 
-            "test-destination", 
-            KeyUsagePurpose::Encryption,
-            "test-requester"
-        ).await?;
+        let manager = SecureKeyManager::new(client);
         
-        // Verify key has correct size
+        // Get a key
+        let key = manager.get_key(32, "test-dest", KeyUsagePurpose::Encryption, "test").await?;
+        
+        // Verify it has the right size
         assert_eq!(key.metadata.key_size, 32);
         
-        // Mark key as consumed
-        key_manager.consume_key(&key.key_id).await?;
+        // Get usage stats
+        let stats = manager.get_usage_statistics().await;
+        assert_eq!(stats.get(&KeyUsagePurpose::Encryption), Some(&1));
         
-        // Get usage statistics
-        let stats = key_manager.get_usage_statistics().await;
-        assert_eq!(stats.get("encryption"), Some(&1));
+        // Mark key as consumed
+        manager.consume_key(&key.key_id).await?;
+        
+        Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_key_reuse_prevention() -> Result<(), Box<dyn Error>> {
+        // Create simulated client
+        let alice_client = ETSIClient::new(
+            DeviceType::Simulated,
+            Side::Alice,
+            &PathBuf::from("nonexistent-cert.pem"),
+            None,
+            None,
+        )?;
+        
+        let bob_client = ETSIClient::new(
+            DeviceType::Simulated,
+            Side::Bob,
+            &PathBuf::from("nonexistent-cert.pem"),
+            None,
+            None,
+        )?;
+        
+        let alice_manager = SecureKeyManager::new(alice_client);
+        let bob_manager = SecureKeyManager::new(bob_client);
+        
+        // Alice gets a key
+        let key = alice_manager.get_key(32, "test-dest", KeyUsagePurpose::Encryption, "test1").await?;
+        
+        // Bob retrieves the same key
+        let bob_key = bob_manager.get_key_by_id(&key.key_id, KeyUsagePurpose::Encryption, "test2").await?;
+        
+        // Verify it's the same key
+        assert_eq!(key.key_bytes, bob_key.key_bytes);
+        
+        // Try to reuse the key for a different purpose (should fail)
+        let reuse_result = bob_manager.get_key_by_id(&key.key_id, KeyUsagePurpose::Authentication, "test3").await;
+        assert!(reuse_result.is_err(), "Key reuse should be prevented");
         
         Ok(())
     }

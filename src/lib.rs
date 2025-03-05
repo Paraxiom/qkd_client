@@ -1,7 +1,7 @@
 // src/lib.rs
 pub mod byzantine;
+pub mod qkd;
 pub mod quantum_auth;
 pub mod reporter;
 pub mod vrf;
 pub mod zk;
-pub mod qkd;

@@ -98,8 +98,15 @@ impl ETSIClient {
     /// * `device_type` - Type of QKD device (Toshiba, IDQ, etc.)
     /// * `side` - The side of the QKD device (Alice or Bob)
     /// * `cert_path` - Path to TLS certificate for secure communication
+    /// * `root_cert_path` - Optional path to root CA certificate
     /// * `auth_token` - Optional authentication token for API access
-    pub fn new(device_type: DeviceType, side: Side, cert_path: &Path, auth_token: Option<String>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(
+        device_type: DeviceType, 
+        side: Side, 
+        cert_path: &Path, 
+        root_cert_path: Option<&Path>,
+        auth_token: Option<String>
+    ) -> Result<Self, Box<dyn Error>> {
         let base_url = match device_type {
             DeviceType::Toshiba => match side {
                 Side::Alice => "https://192.168.0.4/api/v1",
@@ -124,14 +131,32 @@ impl ETSIClient {
             // For simulated devices, we can also disable certificate verification
             client_builder = client_builder.danger_accept_invalid_certs(true);
         } else {
+            // Load the device certificate
             if cert_path.exists() {
                 debug!("Loading certificate from {:?}", cert_path);
                 let cert_data = fs::read(cert_path)?;
                 let cert = Certificate::from_pem(&cert_data)?;
                 client_builder = client_builder.add_root_certificate(cert);
+                
+                // Load root certificate if provided
+                if let Some(root_path) = root_cert_path {
+                    if root_path.exists() {
+                        debug!("Loading root certificate from {:?}", root_path);
+                        let root_data = fs::read(root_path)?;
+                        let root_cert = Certificate::from_pem(&root_data)?;
+                        client_builder = client_builder.add_root_certificate(root_cert);
+                    } else {
+                        warn!("Root certificate path {:?} does not exist", root_path);
+                    }
+                }
             } else {
                 warn!("Certificate path {:?} does not exist, proceeding without certificate", cert_path);
             }
+            
+            // For real devices, we may need to disable certificate verification if there are issues
+            // with self-signed certificates or complex certificate chains
+            // Uncomment this line if you're having certificate verification issues
+            // client_builder = client_builder.danger_accept_invalid_certs(true);
         }
         
         // Create client with certificate
@@ -277,13 +302,25 @@ impl ETSIClient {
             let parts: Vec<&str> = key_id.split('-').collect();
             
             if parts.len() >= 3 {
-                // Instead of trying to parse parts of the UUID, we need to match the original format
-                // Find the actual key size part, which should be the part directly before the UUID segments
-                let dest_id = parts[0].to_string();
-                let key_size = parts[1].parse::<usize>().unwrap_or(32);  // Always use the size after dest_id
+                // Extract the destination ID and key size from the key_id
+                let mut dest_id = parts[0].to_string();
                 
-                // Use the exact key_id to ensure deterministic generation
-                return self.generate_simulated_key(key_size, &dest_id, Some(key_id)).await;
+                // If there are more than 3 parts, the destination ID might contain hyphens
+                // We need to reconstruct it properly
+                if parts.len() > 3 {
+                    // The destination could have hyphens, so reconstruct it
+                    // assuming the second-to-last part is the key size
+                    let size_index = parts.len() - 2;
+                    dest_id = parts[0..size_index].join("-");
+                    let key_size = parts[size_index].parse::<usize>().unwrap_or(32);
+                    
+                    // Use the exact key_id to ensure deterministic generation
+                    return self.generate_simulated_key(key_size, &dest_id, Some(key_id)).await;
+                } else {
+                    // Simple case: destination-size-uuid
+                    let key_size = parts[1].parse::<usize>().unwrap_or(32);
+                    return self.generate_simulated_key(key_size, &dest_id, Some(key_id)).await;
+                }
             } else {
                 // Fallback for malformed key_ids
                 warn!("Malformed key_id format: {}, using as destination with default size", key_id);
@@ -599,46 +636,24 @@ impl ETSIClient {
     /// * `dest_id` - Destination ID
     /// * `specific_key_id` - If provided, use this exact key ID instead of generating a new one
     async fn generate_simulated_key(&self, key_size: usize, dest_id: &str, specific_key_id: Option<&str>) -> Result<QKDKey, Box<dyn Error>> {
-        // Create a deterministic but unique key ID based on destination ID and size
+        // Use the specified key_size directly, rather than deriving it from parts
+        
+        // Create key ID
         let key_id = if let Some(id) = specific_key_id {
-            // Use the provided key ID (this ensures Bob generates the same key as Alice)
             id.to_string()
         } else {
-            // Generate a new key ID (used by Alice)
             let unique_id = format!("{}-{}", dest_id, key_size);
             format!("{}-{}", unique_id, uuid::Uuid::new_v4())
         };
         
-        // Extract original seed information from the key_id
-        // This ensures the same key bytes are generated regardless of whether it's a new key or
-        // we're regenerating an existing key
-        let parts: Vec<&str> = key_id.split('-').collect();
-        let seed_parts = if parts.len() >= 3 {
-            // The seed should be based on the destination and size, not the UUID
-            if parts.len() > 3 {
-                // Handle case where destination ID contains hyphens
-                let size_index = parts.len() - 2;
-                let dest = parts[0..size_index].join("-");
-                let size = parts[size_index];
-                format!("{}-{}", dest, size)
-            } else {
-                // Simple case: destination-size-uuid
-                format!("{}-{}", parts[0], parts[1])
-            }
-        } else {
-            // Fallback, use the whole key ID
-            key_id.clone()
-        };
+        // Generate key bytes using a deterministic algorithm based on 
+        // the destination ID and specified key size only
+        let seed_str = format!("{}-{}", dest_id, key_size);
+        let seed = seed_str.as_bytes().iter().fold(0u64, |acc, &x| acc.wrapping_add(x as u64));
         
-        // Generate deterministic key bytes based on the seed parts
+        // Generate the key bytes using the provided key_size
         let mut key_bytes = vec![0u8; key_size];
-        
-        // Use a simple deterministic algorithm to generate key bytes
-        // This ensures that the same key_id always produces the same key bytes
-        let seed = seed_parts.as_bytes().iter().fold(0u64, |acc, &x| acc.wrapping_add(x as u64));
-        
         for i in 0..key_size {
-            // Simple PRNG formula based on the position and seed
             let value = ((seed + i as u64).wrapping_mul(0x5DEECE66Du64).wrapping_add(0xBu64)) % 256;
             key_bytes[i] = value as u8;
         }
@@ -690,6 +705,7 @@ mod tests {
             DeviceType::Simulated,
             Side::Alice,
             &PathBuf::from("nonexistent-cert.pem"),
+            None,
             None
         )?;
         
@@ -706,6 +722,7 @@ mod tests {
             DeviceType::Simulated,
             Side::Bob,
             &PathBuf::from("nonexistent-cert.pem"),
+            None,
             None
         )?;
         
@@ -761,6 +778,7 @@ mod tests {
             DeviceType::Simulated,
             Side::Alice,
             &PathBuf::from("nonexistent-cert.pem"),
+            None,
             None
         )?;
         
@@ -784,6 +802,7 @@ mod tests {
             DeviceType::Simulated,
             Side::Alice,
             &PathBuf::from("nonexistent-cert.pem"),
+            None,
             None
         )?;
         
@@ -791,6 +810,7 @@ mod tests {
             DeviceType::Simulated,
             Side::Bob,
             &PathBuf::from("nonexistent-cert.pem"),
+            None,
             None
         )?;
         
