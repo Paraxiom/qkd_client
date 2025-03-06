@@ -826,4 +826,98 @@ mod tests {
         
         Ok(())
     }
+     // Add this new method below your existing ETSIClient::new() method
+    
+    /// Create a new ETSI QKD client with separate certificate and key data
+    /// 
+    /// # Arguments
+    /// * `device_type` - Type of QKD device (Toshiba, IDQ, etc.)
+    /// * `side` - The side of the QKD device (Alice or Bob)
+    /// * `cert_data` - Certificate data in PEM format
+    /// * `key_data` - Private key data in PEM format
+    /// * `root_data` - Optional root CA certificate data in PEM format
+    /// * `auth_token` - Optional authentication token for API access
+    pub fn with_cert_and_key(
+        device_type: DeviceType, 
+        side: Side, 
+        cert_data: Vec<u8>,
+        key_data: Vec<u8>,
+        root_data: Option<Vec<u8>>,
+        auth_token: Option<String>
+    ) -> Result<Self, Box<dyn Error>> {
+        use reqwest::{Certificate, Identity, ClientBuilder};
+        
+        let base_url = match device_type {
+            DeviceType::Toshiba => match side {
+                Side::Alice => "https://192.168.0.4/api/v1",
+                Side::Bob => "https://192.168.0.2/api/v1",
+            },
+            DeviceType::IDQ => match side {
+                Side::Alice => "https://192.168.101.202/api/v1",
+                Side::Bob => "https://192.168.101.207/api/v1",
+            },
+            DeviceType::Basejump => match side {
+                Side::Alice => "https://192.168.0.101/api/v1",
+                Side::Bob => "https://192.168.101.102/api/v1",
+            },
+            DeviceType::Simulated => "http://localhost:8000/api/v1",
+        };
+        
+        let mut client_builder = ClientBuilder::new();
+        
+        // Load certificate if needed
+        if matches!(device_type, DeviceType::Simulated) {
+            debug!("Using simulated device, skipping certificate loading");
+            // For simulated devices, we can also disable certificate verification
+            client_builder = client_builder.danger_accept_invalid_certs(true);
+        } else {
+            // Process certificate and key data
+            debug!("Processing certificate and key data");
+            
+            // The key and cert need to be combined into a PEM identity
+            // First, ensure both are in PEM format
+            let cert_str = String::from_utf8_lossy(&cert_data);
+            let key_str = String::from_utf8_lossy(&key_data);
+            
+            // Check if they look like PEM data
+            if !cert_str.contains("-----BEGIN CERTIFICATE-----") {
+                return Err("Invalid certificate data, does not contain PEM markers".into());
+            }
+            
+            if !key_str.contains("-----BEGIN PRIVATE KEY-----") && 
+               !key_str.contains("-----BEGIN RSA PRIVATE KEY-----") {
+                return Err("Invalid key data, does not contain PEM markers".into());
+            }
+            
+            // Create a combined PEM file containing both cert and key
+            let identity_pem = format!("{}\n{}", cert_str, key_str);
+            
+            // Create identity from the combined PEM
+            debug!("Creating identity from combined PEM data");
+            let identity = Identity::from_pem(identity_pem.as_bytes())?;
+            client_builder = client_builder.identity(identity);
+            
+            // Add root CA if provided
+            if let Some(data) = root_data {
+                debug!("Adding root certificate");
+                let root_cert = Certificate::from_pem(&data)?;
+                client_builder = client_builder.add_root_certificate(root_cert);
+            }
+            
+            // For real devices, we often need to disable strict verification
+            client_builder = client_builder.danger_accept_invalid_certs(true);
+            client_builder = client_builder.danger_accept_invalid_hostnames(true);
+        }
+        
+        // Create client with certificate
+        let client = client_builder.build()?;
+        
+        Ok(Self {
+            base_url: base_url.to_string(),
+            client,
+            device_type,
+            auth_token,
+            key_cache: std::sync::Arc::new(tokio::sync::Mutex::new(Vec::new())),
+        })
+    }
 }
