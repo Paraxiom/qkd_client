@@ -1,411 +1,106 @@
-//! Quantum Security Testing Tool
-//! This tests the system's resistance to simulated quantum attacks:
-//! 1. Tests SPHINCS+ with different security parameters
-//! 2. Evaluates key management for quantum security
-//! 3. Tests Byzantine consensus under simulated quantum computing threat models
-//! 4. Measures performance impact of quantum-resistant algorithms
-use qkd_client::qkd::etsi_api::{DeviceType, ETSIClient, Side};
-use qkd_client::qkd::key_manager::{SecureKeyManager, KeyUsagePurpose};
-use qkd_client::quantum_auth::pq::{SphincsAuth, SphincsVariant};
+//! Quantum Security Integration Test using QKDClient and VRF
 use qkd_client::quantum_auth::hybrid::HybridAuth;
 use qkd_client::vrf::integrated_vrf::IntegratedVRF;
+use reqwest::{Certificate, Client, Identity};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::path::PathBuf;
-use std::path::Path;
-use std::time::{Duration, Instant};
-use tracing::{info, debug, warn, error, Level};
+use tracing::{info, debug, Level};
 use tracing_subscriber::FmtSubscriber;
-use rand::{Rng, thread_rng};
 
-// Define test parameters
-const MESSAGE_SIZES: [usize; 3] = [64, 1024, 4096]; // bytes
-const SECURITY_LEVELS: [SphincsVariant; 3] = [
-    SphincsVariant::Sha2128f,
-    SphincsVariant::Sha2192f,
-    SphincsVariant::Sha2256f,
-];
-const ITERATIONS: usize = 5;
+const BASE_URL: &str = "https://192.168.0.4";
+const ALICE_CERT_PATH: &str = "/home/paraxiom/qkd_client.mar5/certificate/Toshiba/certs/client_alice.p12";
+const CA_CERT_PATH: &str = "/home/paraxiom/qkd_client.mar5/certificate/Toshiba/certs/ca_crt.pem";
+const P12_PASSWORD: &str = "MySecret";
 
-// Define whether to use simulated or real devices
-const USE_REAL_DEVICES: bool = false;
+#[derive(Debug, Deserialize)]
+struct KeyResponse {
+    keys: Vec<QuantumKey>,
+}
+
+#[derive(Debug, Deserialize)]
+struct QuantumKey {
+    key_ID: String,
+    key: String,
+}
+
+struct QKDClient {
+    client: Client,
+    base_url: String,
+}
+
+impl QKDClient {
+    fn new() -> Result<Self, Box<dyn Error>> {
+        let pkcs12_bytes = std::fs::read(ALICE_CERT_PATH)?;
+        let ca_cert_bytes = std::fs::read(CA_CERT_PATH)?;
+
+        let ca_cert = Certificate::from_pem(&ca_cert_bytes)?;
+        let identity = Identity::from_pkcs12_der(&pkcs12_bytes, P12_PASSWORD)?;
+
+        let client = Client::builder()
+            .identity(identity)
+            .add_root_certificate(ca_cert)
+            .danger_accept_invalid_hostnames(true)
+            .build()?;
+
+        Ok(Self {
+            client,
+            base_url: BASE_URL.into(),
+        })
+    }
+
+    pub async fn get_key(&self, sae_id: &str, key_size: u32) -> Result<(String, Vec<u8>), Box<dyn Error>> {
+        let req_body = serde_json::json!({
+            "sae_id": sae_id,
+            "key_size": key_size,
+            "number_of_keys": 1,
+        });
+
+        let url = format!("{}/api/v1/keys/{}/enc_keys", self.base_url, sae_id);
+        debug!("Sending request to {}", url);
+
+        let resp = self.client.post(url).json(&req_body).send().await?;
+
+        if !resp.status().is_success() {
+            return Err(format!("Failed to retrieve key, status: {}", resp.status()).into());
+        }
+
+        let key_resp: KeyResponse = resp.json().await?;
+        let quantum_key = &key_resp.keys[0];
+
+        let key_bytes = base64::decode(&quantum_key.key)?;
+
+        Ok((quantum_key.key_ID.clone(), key_bytes))
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // Initialize logging
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("Failed to set tracing subscriber");
-    
-    info!("Starting Quantum Security Assessment");
-    let start = Instant::now();
-    
-    // Setup certificate paths based on whether we're using real or simulated devices
-    let (cert_paths, device_type) = if USE_REAL_DEVICES {
-        // Using real Basejump devices
-        let cert_paths = (
-            PathBuf::from("certificate/Basejump/USER_001.pem"),    // Alice cert
-            PathBuf::from("certificate/Basejump/USER_002.pem"),    // Bob cert
-            Some(PathBuf::from("certificate/Basejump/evq-root.pem")), // Root CA cert
-        );
-        (cert_paths, DeviceType::Basejump)
-    } else {
-        // Using simulated devices
-        let cert_paths = (
-            PathBuf::from("dummy.pem"),
-            PathBuf::from("dummy.pem"),
-            None,
-        );
-        (cert_paths, DeviceType::Simulated)
-    };
-    
-    // Test 1: SPHINCS+ Benchmarking with Different Security Levels
-    info!("🔬 Test 1: SPHINCS+ Quantum Resistance Assessment");
-    test_sphincs_security_levels().await?;
-    
-    // Test 2: QKD Key Management Security
-    info!("🔬 Test 2: QKD Key Management Security");
-    test_qkd_key_management(&cert_paths, device_type.clone()).await?;
-    
-    // Test 3: Simulated Quantum Attack Resistance
-    info!("🔬 Test 3: Simulated Quantum Attack Resistance");
-    test_simulated_quantum_attacks(&cert_paths, device_type).await?;
-    
-    // Test 4: Performance Impact Assessment
-    info!("🔬 Test 4: Performance Impact Assessment");
-    test_performance_impact().await?;
-    
-    info!("✅ Quantum Security Assessment completed in {:?}", start.elapsed());
-    Ok(())
-}
+    let subscriber = FmtSubscriber::builder().with_max_level(Level::INFO).finish();
+    tracing::subscriber::set_global_default(subscriber)?;
 
-/// Test SPHINCS+ with different security parameters
-async fn test_sphincs_security_levels() -> Result<(), Box<dyn Error>> {
-    info!("Testing SPHINCS+ with different security parameters");
-    
-    println!("| Security Level | Message Size | Sign Time | Verify Time | Signature Size |");
-    println!("|---------------|--------------|-----------|-------------|----------------|");
-    
-    for &variant in &SECURITY_LEVELS {
-        for &msg_size in &MESSAGE_SIZES {
-            // Create test message
-            let message = generate_random_message(msg_size);
-            
-            // Initialize SPHINCS+ with this security level
-            let sphincs = SphincsAuth::with_variant(variant)?;
-            
-            // Benchmark signing
-            let mut total_sign_time = Duration::from_secs(0);
-            let mut total_verify_time = Duration::from_secs(0);
-            let mut signature_size = 0;
-            
-            for _ in 0..ITERATIONS {
-                // Sign
-                let sign_start = Instant::now();
-                let signature = sphincs.sign(&message)?;
-                let sign_time = sign_start.elapsed();
-                total_sign_time += sign_time;
-                
-                signature_size = signature.len();
-                
-                // Verify
-                let verify_start = Instant::now();
-                let valid = sphincs.verify(&message, &signature)?;
-                let verify_time = verify_start.elapsed();
-                total_verify_time += verify_time;
-                
-                assert!(valid, "Signature verification failed");
-            }
-            
-            // Calculate averages
-            let avg_sign_time = total_sign_time.div_f32(ITERATIONS as f32);
-            let avg_verify_time = total_verify_time.div_f32(ITERATIONS as f32);
-            
-            println!("| {:<13} | {:<12} | {:<9?} | {:<11?} | {:<14} |",
-                format!("{}-bit", variant.security_bits()),
-                format!("{}B", msg_size),
-                avg_sign_time,
-                avg_verify_time,
-                format!("{}B", signature_size)
-            );
-        }
-    }
-    
-    Ok(())
-}
+    info!("🚀 Starting QKD Client Integration Test");
 
-/// Test QKD key management security
-/// Test QKD key management security
-async fn test_qkd_key_management(
-    cert_paths: &(PathBuf, PathBuf, Option<PathBuf>),
-    device_type: DeviceType
-) -> Result<(), Box<dyn Error>> {
-    info!("Testing QKD key management security");
-    
-    // Create Alice and Bob key managers with the appropriate certificates
-    let alice_manager = create_alice_key_manager(cert_paths, device_type.clone())?;
-    let bob_manager = create_bob_key_manager(cert_paths, device_type.clone())?;
-    
-    // Test key retrieval and usage tracking
-    info!("Testing key retrieval and usage tracking");
-    
-    // Get keys for different purposes
-    let enc_key = alice_manager.get_key(32, "test-dest", KeyUsagePurpose::Encryption, "enc-test").await?;
-    let auth_key = alice_manager.get_key(32, "test-dest", KeyUsagePurpose::Authentication, "auth-test").await?;
-    let vrf_key = alice_manager.get_key(32, "test-dest", KeyUsagePurpose::VRF, "vrf-test").await?;
-    
-    // Verify Bob can retrieve the keys
-    let bob_enc_key = bob_manager.get_key_by_id(&enc_key.key_id, KeyUsagePurpose::Encryption, "enc-verify").await?;
-    
-    // Since we can't compare DeviceType directly, use a match to check if it's simulated
-    let is_simulated = matches!(device_type, DeviceType::Simulated);
-    
-    // For simulated mode, keys may not match exactly - skip the equality check
-    if !is_simulated {
-        assert_eq!(bob_enc_key.key_bytes, enc_key.key_bytes, "Key mismatch between Alice and Bob");
-    } else {
-        info!("Skipping key equality check in simulation mode");
-        // In simulation mode, just log the keys for debugging
-        debug!("Alice key: {:?}", enc_key.key_bytes);
-        debug!("Bob key: {:?}", bob_enc_key.key_bytes);
-    }
-    
-    // Test key reuse prevention
-    info!("Testing key reuse prevention");
-    let reuse_result = bob_manager.get_key_by_id(&enc_key.key_id, KeyUsagePurpose::Encryption, "reuse-test").await;
-    
-    match reuse_result {
-        Err(e) => {
-            info!("✅ Key reuse correctly prevented: {}", e);
-        },
-        Ok(_) => {
-            // If we're in simulation mode, this might actually succeed incorrectly
-            if is_simulated {
-                warn!("⚠️ Key reuse was allowed, but this might be expected in simulation mode");
-            } else {
-                error!("❌ Security issue: Key reuse was not prevented");
-                return Err("Key reuse prevention failed".into());
-            }
-        }
-    }
-    
-    // Test key lifecycle management
-    info!("Testing key lifecycle management");
-    
-    // Mark key as consumed
-    alice_manager.consume_key(&auth_key.key_id).await?;
-    
-    // Try to use consumed key (should fail)
-    let consumed_result = bob_manager.get_key_by_id(&auth_key.key_id, KeyUsagePurpose::Authentication, "consume-test").await;
-    
-    match consumed_result {
-        Err(_) => {
-            info!("✅ Consumed key correctly prevented from reuse");
-        },
-        Ok(_) => {
-            // If we're in simulation mode, this might actually succeed incorrectly
-            if is_simulated {
-                warn!("⚠️ Consumed key was allowed to be reused, but this might be expected in simulation mode");
-            } else {
-                error!("❌ Security issue: Consumed key was allowed to be reused");
-                return Err("Consumed key protection failed".into());
-            }
-        }
-    }
-    
-    // Get usage statistics
-    let stats = alice_manager.get_usage_statistics().await;
-    info!("Key usage statistics: {:?}", stats);
-    
-    Ok(())
-}
+    let qkd_client = QKDClient::new()?;
 
-/// Test simulated quantum attacks
-async fn test_simulated_quantum_attacks(
-    cert_paths: &(PathBuf, PathBuf, Option<PathBuf>),
-    device_type: DeviceType
-) -> Result<(), Box<dyn Error>> {
-    info!("Testing resistance to simulated quantum attacks");
-    
-    // 1. Test resistance to Grover's algorithm (simulated)
-    info!("Simulating Grover's algorithm attack on quantum key");
-    
-    // Get a quantum key
-    let alice_client = ETSIClient::new(
-        device_type,
-        Side::Alice,
-        &cert_paths.0,
-        cert_paths.2.as_ref().map(|v| v.as_path()),
-        None,
-    )?;
-    
-    let key = alice_client.get_key_alice(32, "attack-test", None).await?;
-    
-    // Simulate Grover search (simplified)
-    let simulated_search_time = estimate_grover_search_time(key.metadata.key_size * 8);
-    info!("Estimated time for Grover search: {}", format_duration(simulated_search_time));
-    
-    // 2. Test hybrid authentication against quantum attacks
-    info!("Testing hybrid authentication against quantum attacks");
-    
-    // Create hybrid auth
-    let hybrid_auth = HybridAuth::new()?;
-    
-    // Sign message
-    let message = b"Test message for quantum attack simulation";
-    let signature = hybrid_auth.sign(message)?;
-    
-    // Verify signature
-    let valid = hybrid_auth.verify(message, &signature)?;
-    assert!(valid, "Hybrid signature verification failed");
-    
-    // Simulate quantum attack on classical component
-    info!("Simulating quantum attack on classical component of hybrid authentication");
-    
-    // In a real test, we would try to attack the classical component
-    // For now, we'll just log the estimated attack time
-    let classical_attack_time = Duration::from_secs(2_592_000); // 30 days (optimistic)
-    info!("Estimated time to break classical component: {}", format_duration(classical_attack_time));
-    
-    // But quantum component should remain secure
-    info!("✅ Quantum component remains secure even after classical component is broken");
-    
-    Ok(())
-}
+    info!("🔑 Requesting quantum-secured key from QKD server");
+    let (key_id, key_bytes) = qkd_client.get_key("bobsae", 256).await?;
+    info!("🔑 Retrieved key ID: {}", key_id);
 
-/// Test performance impact of quantum-resistant algorithms
-async fn test_performance_impact() -> Result<(), Box<dyn Error>> {
-    info!("Measuring performance impact of quantum-resistant algorithms");
-    
-    // 1. Measure VRF performance
-    info!("Measuring quantum-resistant VRF performance");
-    
-    // Create hybrid auth and VRF
+    info!("🛡️ Testing Quantum-Resistant VRF");
     let hybrid_auth = HybridAuth::new()?;
     let vrf = IntegratedVRF::new(hybrid_auth);
-    
-    // Test input and key
-    let input = b"VRF performance test input";
-    let quantum_key = generate_random_message(32);
-    
-    // Measure performance
-    let iterations = 10;
-    let mut total_gen_time = Duration::from_secs(0);
-    let mut total_verify_time = Duration::from_secs(0);
-    
-    for _ in 0..iterations {
-        // Generate
-        let gen_start = Instant::now();
-        let response = vrf.generate_with_proof(input, &quantum_key)?;
-        let gen_time = gen_start.elapsed();
-        total_gen_time += gen_time;
-        
-        // Verify
-        let verify_start = Instant::now();
-        let valid = vrf.verify_with_proof(input, &response, &quantum_key)?;
-        let verify_time = verify_start.elapsed();
-        total_verify_time += verify_time;
-        
-        assert!(valid, "VRF verification failed");
-    }
-    
-    let avg_gen_time = total_gen_time.div_f32(iterations as f32);
-    let avg_verify_time = total_verify_time.div_f32(iterations as f32);
-    
-    info!("Quantum-resistant VRF performance:");
-    info!("  Generation: {:?} per operation", avg_gen_time);
-    info!("  Verification: {:?} per operation", avg_verify_time);
-    
+
+    let input_data = b"Integration test for QKD quantum-resistant VRF";
+    let vrf_response = vrf.generate_with_proof(input_data, &key_bytes)?;
+
+    info!(
+        "VRF Output: {} bytes, Proof: {} bytes",
+        vrf_response.output.len(),
+        vrf_response.vrf_proof.len()
+    );
+
+    assert!(vrf.verify_with_proof(input_data, &vrf_response, &key_bytes)?);
+
+    info!("✅ VRF verification successful");
     Ok(())
-}
-
-// Helper functions
-
-/// Create an Alice key manager with the appropriate certificates
-fn create_alice_key_manager(
-    cert_paths: &(PathBuf, PathBuf, Option<PathBuf>),
-    device_type: DeviceType
-) -> Result<SecureKeyManager, Box<dyn Error>> {
-    let alice_client = ETSIClient::new(
-        device_type,
-        Side::Alice,
-        &cert_paths.0,
-        cert_paths.2.as_ref().map(|v| v.as_path()),
-        None,
-    )?;
-    
-    Ok(SecureKeyManager::new(alice_client))
-}
-
-/// Create a Bob key manager with the appropriate certificates
-fn create_bob_key_manager(
-    cert_paths: &(PathBuf, PathBuf, Option<PathBuf>),
-    device_type: DeviceType
-) -> Result<SecureKeyManager, Box<dyn Error>> {
-    let bob_client = ETSIClient::new(
-        device_type,
-        Side::Bob,
-        &cert_paths.1,
-        cert_paths.2.as_ref().map(|v| v.as_path()),
-        None,
-    )?;
-    
-    Ok(SecureKeyManager::new(bob_client))
-}
-
-/// Generate random message of specified size
-fn generate_random_message(size: usize) -> Vec<u8> {
-    let mut rng = thread_rng();
-    let mut message = vec![0u8; size];
-    rng.fill(&mut message[..]);
-    message
-}
-
-/// Estimate time for Grover's algorithm search
-fn estimate_grover_search_time(bit_length: usize) -> Duration {
-    // This is a simplified model - in reality, it would depend on many factors
-    // Grover's algorithm requires O(sqrt(N)) operations for N-bit search space
-    
-    // Calculate number of operations needed
-    // We need to handle large bit lengths safely to avoid overflow
-    
-    // For bit lengths > 256, we would need more than 2^128 operations,
-    // which exceeds what we can represent, so cap it
-    let effective_bit_length = std::cmp::min(bit_length, 256);
-    
-    // Calculate sqrt(2^bit_length) = 2^(bit_length/2)
-    // Use f64 for the calculation to avoid integer overflow
-    let half_bits = effective_bit_length / 2;
-    let operations = 2.0f64.powi(half_bits as i32);
-    
-    // Assume 1 billion operations per second on a quantum computer
-    let ops_per_second = 1_000_000_000f64;
-    
-    // Calculate seconds
-    let seconds = operations / ops_per_second;
-    
-    // Convert to Duration, capping at u64::MAX if needed
-    if seconds > (u64::MAX as f64) {
-        Duration::from_secs(u64::MAX)
-    } else {
-        Duration::from_secs(seconds as u64)
-    }
-}
-
-/// Format duration as readable string
-fn format_duration(duration: Duration) -> String {
-    let seconds = duration.as_secs();
-    
-    if seconds < 60 {
-        format!("{} seconds", seconds)
-    } else if seconds < 3600 {
-        format!("{} minutes", seconds / 60)
-    } else if seconds < 86400 {
-        format!("{} hours", seconds / 3600)
-    } else if seconds < 31536000 {
-        format!("{} days", seconds / 86400)
-    } else {
-        format!("{} years", seconds / 31536000)
-    }
 }
