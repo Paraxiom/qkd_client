@@ -8,8 +8,8 @@ use tracing::{info, debug, Level};
 use tracing_subscriber::FmtSubscriber;
 
 const BASE_URL: &str = "https://192.168.0.4";
-const ALICE_CERT_PATH: &str = "/home/paraxiom/qkd_client.mar5/certificate/Toshiba/certs/client_alice.p12";
-const CA_CERT_PATH: &str = "/home/paraxiom/qkd_client.mar5/certificate/Toshiba/certs/ca_crt.pem";
+const ALICE_CERT_PATH: &str = "/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12";
+const CA_CERT_PATH: &str = "/home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem";
 const P12_PASSWORD: &str = "MySecret";
 
 #[derive(Debug, Deserialize)]
@@ -32,16 +32,13 @@ impl QKDClient {
     fn new() -> Result<Self, Box<dyn Error>> {
         let pkcs12_bytes = std::fs::read(ALICE_CERT_PATH)?;
         let ca_cert_bytes = std::fs::read(CA_CERT_PATH)?;
-
         let ca_cert = Certificate::from_pem(&ca_cert_bytes)?;
         let identity = Identity::from_pkcs12_der(&pkcs12_bytes, P12_PASSWORD)?;
-
         let client = Client::builder()
             .identity(identity)
             .add_root_certificate(ca_cert)
             .danger_accept_invalid_hostnames(true)
             .build()?;
-
         Ok(Self {
             client,
             base_url: BASE_URL.into(),
@@ -54,21 +51,15 @@ impl QKDClient {
             "key_size": key_size,
             "number_of_keys": 1,
         });
-
         let url = format!("{}/api/v1/keys/{}/enc_keys", self.base_url, sae_id);
         debug!("Sending request to {}", url);
-
         let resp = self.client.post(url).json(&req_body).send().await?;
-
         if !resp.status().is_success() {
             return Err(format!("Failed to retrieve key, status: {}", resp.status()).into());
         }
-
         let key_resp: KeyResponse = resp.json().await?;
         let quantum_key = &key_resp.keys[0];
-
         let key_bytes = base64::decode(&quantum_key.key)?;
-
         Ok((quantum_key.key_ID.clone(), key_bytes))
     }
 }
@@ -77,30 +68,42 @@ impl QKDClient {
 async fn main() -> Result<(), Box<dyn Error>> {
     let subscriber = FmtSubscriber::builder().with_max_level(Level::INFO).finish();
     tracing::subscriber::set_global_default(subscriber)?;
-
+    
     info!("🚀 Starting QKD Client Integration Test");
-
+    
     let qkd_client = QKDClient::new()?;
-
     info!("🔑 Requesting quantum-secured key from QKD server");
     let (key_id, key_bytes) = qkd_client.get_key("bobsae", 256).await?;
     info!("🔑 Retrieved key ID: {}", key_id);
-
+    
     info!("🛡️ Testing Quantum-Resistant VRF");
+    
+    // Create the hybrid auth
     let hybrid_auth = HybridAuth::new()?;
-    let vrf = IntegratedVRF::new(hybrid_auth);
-
+    
+    // Create the VRF - unwrap once
+    let vrf = IntegratedVRF::new(hybrid_auth).expect("Failed to create IntegratedVRF");
+    
+    // Prepare input data
     let input_data = b"Integration test for QKD quantum-resistant VRF";
-    let vrf_response = vrf.expect("REASON").generate_with_proof(input_data, &key_bytes)?;
-
+    
+    // Generate VRF output and proof
+    let vrf_response = vrf.generate_with_proof(input_data, &key_bytes)?;
+    
     info!(
         "VRF Output: {} bytes, Proof: {} bytes",
         vrf_response.output.len(),
         vrf_response.vrf_proof.len()
     );
-
-    let vrf_response = vrf.expect("REASON").generate_with_proof(input_data, &key_bytes)?;
-
-    info!("✅ VRF verification successful");
+    
+    // Verify the VRF output
+    let is_valid = vrf.verify_with_proof(input_data, &vrf_response, &key_bytes)?;
+    
+    if is_valid {
+        info!("✅ VRF verification successful");
+    } else {
+        return Err("❌ VRF verification failed".into());
+    }
+    
     Ok(())
 }

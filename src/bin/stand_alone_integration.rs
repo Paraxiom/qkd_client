@@ -14,8 +14,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Starting QKD client certificate test");
     
     // Use absolute paths exactly as in your working reporter code
-    let p12_path = Path::new("/home/paraxiom/qkd_client.mar5/certificate/Toshiba/certs/client_alice.p12");
-    let ca_path = Path::new("/home/paraxiom/qkd_client.mar5/certificate/Toshiba/certs/ca_crt.pem");
+    let p12_path = Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12");
+    let ca_path = Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem");
     
     println!("Loading certificates...");
     

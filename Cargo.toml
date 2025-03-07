@@ -11,9 +11,7 @@ path = "src/lib.rs"
 name = "qkd_client"
 path = "src/main.rs"
 
-[[bin]]
-name = "setup_main"
-path = "src/bin/setup_main.rs"
+
 
 [dependencies]
 # Arkworks base

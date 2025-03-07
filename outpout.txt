@@ -37,13 +37,13 @@
 2025-03-07T15:02:32.485606Z  INFO qkd_client::vrf::core: VRF output generated successfully: 64 bytes, proof: 66660 bytes
 2025-03-07T15:02:32.485633Z DEBUG qkd_client::vrf::integrated_vrf: Generated VRF output in 335.237332ms
 2025-03-07T15:02:32.485669Z  INFO qkd_client::zk::circuit_manager: Generating proof for circuit: vrf_seed_proof
-2025-03-07T15:02:32.485884Z DEBUG qkd_client::zk::circuit_manager: Created input file at "/home/paraxiom/qkd_client.mar5/circuits/vrf_seed_proof_input.json"
+2025-03-07T15:02:32.485884Z DEBUG qkd_client::zk::circuit_manager: Created input file at "/home/paraxiom/qkd_client/circuits/vrf_seed_proof_input.json"
 2025-03-07T15:02:32.485912Z  INFO qkd_client::zk::circuit_manager: Generating witness...
 2025-03-07T15:02:32.704119Z  INFO qkd_client::zk::circuit_manager: ✅ Generated witness successfully
 2025-03-07T15:02:32.704177Z  INFO qkd_client::zk::circuit_manager: Generating proof...
 2025-03-07T15:02:33.319500Z  INFO qkd_client::zk::circuit_manager: ✅ Generated proof successfully
 2025-03-07T15:02:33.319624Z  INFO qkd_client::vrf::integrated_vrf: VRF generation completed in 1.169226468s
-2025-03-07T15:02:33.319977Z  INFO integration_test: Wrote circuit input JSON to "/home/paraxiom/qkd_client.mar5/circuits/vrf_seed_proof_input.json"
+2025-03-07T15:02:33.319977Z  INFO integration_test: Wrote circuit input JSON to "/home/paraxiom/qkd_client/circuits/vrf_seed_proof_input.json"
 [INFO]  snarkJS: OK!
 2025-03-07T15:02:34.559373Z  INFO integration_test: ✅ ZK Proof verified successfully
 2025-03-07T15:02:34.559428Z DEBUG qkd_client::vrf::integrated_vrf: Verifying VRF output
@@ -57,4 +57,4 @@
 2025-03-07T15:02:34.606314Z  INFO qkd_client::vrf::core: VRF verification result: valid
 2025-03-07T15:02:34.606344Z  INFO qkd_client::vrf::integrated_vrf: VRF verification completed in 46.898001ms: true
 2025-03-07T15:02:34.606361Z  INFO integration_test: ✅ VRF verification successful
-paraxiom@paraxiom-VMware20-1:~/qkd_client.mar5$ 
+paraxiom@paraxiom-VMware20-1:~/qkd_client$ 
