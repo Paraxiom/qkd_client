@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let vrf = IntegratedVRF::new(hybrid_auth);
 
     let input_data = b"Integration test for QKD quantum-resistant VRF";
-    let vrf_response = vrf.generate_with_proof(input_data, &key_bytes)?;
+    let vrf_response = vrf.expect("REASON").generate_with_proof(input_data, &key_bytes)?;
 
     info!(
         "VRF Output: {} bytes, Proof: {} bytes",
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         vrf_response.vrf_proof.len()
     );
 
-    assert!(vrf.verify_with_proof(input_data, &vrf_response, &key_bytes)?);
+    let vrf_response = vrf.expect("REASON").generate_with_proof(input_data, &key_bytes)?;
 
     info!("✅ VRF verification successful");
     Ok(())

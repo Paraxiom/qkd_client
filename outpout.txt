@@ -1,0 +1,60 @@
+ Running `target/debug/integration_test`
+2025-03-07T15:02:32.025034Z  INFO integration_test: �� Starting simplified QKD Client Integration Test
+2025-03-07T15:02:32.025093Z DEBUG qkd_client::reporter::qkd_client: Loading PKCS#12 and CA certificates...
+2025-03-07T15:02:32.025111Z DEBUG qkd_client::reporter::qkd_client: 📂 Reading file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12
+2025-03-07T15:02:32.025158Z DEBUG qkd_client::reporter::qkd_client: ✅ Successfully read 4494 bytes
+2025-03-07T15:02:32.025182Z DEBUG qkd_client::reporter::qkd_client: 📂 Reading file: /home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem
+2025-03-07T15:02:32.025212Z DEBUG qkd_client::reporter::qkd_client: ✅ Successfully read 2155 bytes
+2025-03-07T15:02:32.040960Z  INFO integration_test: 🔑 Retrieving quantum-secured key from QKD server
+2025-03-07T15:02:32.040992Z DEBUG qkd_client::reporter::qkd_client: Retrieving key from https://192.168.0.4/api/v1/keys/bobsae/enc_keys
+2025-03-07T15:02:32.041010Z DEBUG qkd_client::reporter::qkd_client: Sending request: KeyRequest { sae_id: "bobsae", key_size: 256, number_of_keys: 1 }
+2025-03-07T15:02:32.041323Z DEBUG hyper::client::connect::http: connecting to 192.168.0.4:443
+2025-03-07T15:02:32.041703Z DEBUG hyper::client::connect::http: connected to 192.168.0.4:443
+2025-03-07T15:02:32.057164Z DEBUG hyper::proto::h1::io: flushed 245 bytes
+2025-03-07T15:02:32.135778Z DEBUG hyper::proto::h1::io: parsed 5 headers
+2025-03-07T15:02:32.135812Z DEBUG hyper::proto::h1::conn: incoming body is content-length (113 bytes)
+2025-03-07T15:02:32.135874Z DEBUG hyper::proto::h1::conn: incoming body completed
+2025-03-07T15:02:32.135961Z DEBUG qkd_client::reporter::qkd_client: Response status: 200 OK
+2025-03-07T15:02:32.136160Z DEBUG hyper::client::pool: pooling idle connection for ("https", 192.168.0.4)
+2025-03-07T15:02:32.136364Z  INFO qkd_client::reporter::qkd_client: Successfully retrieved key with ID: ddad1439-eb04-415a-9e97-0acacbbb7e3f
+2025-03-07T15:02:32.136438Z  INFO integration_test: 🔑 Quantum key retrieved (32 bytes)
+2025-03-07T15:02:32.136473Z DEBUG qkd_client::quantum_auth::hybrid: Generating classical Ed25519 keypair
+2025-03-07T15:02:32.136641Z DEBUG qkd_client::quantum_auth::hybrid: Initializing quantum-resistant SPHINCS+ auth
+2025-03-07T15:02:32.136668Z DEBUG qkd_client::quantum_auth::pq::sphincs: Initializing SPHINCS+ authentication with variant SPHINCS+-SHA2-256f-simple (256-bit security)
+2025-03-07T15:02:32.136686Z  INFO qkd_client::quantum_auth::pq::sphincs: Using SPHINCS+ fast variant with 256-bit security (high security, recommended for long-term protection)
+2025-03-07T15:02:32.150237Z DEBUG qkd_client::quantum_auth::pq::sphincs: SPHINCS+ keypair generated in 13.533837ms
+2025-03-07T15:02:32.150304Z DEBUG qkd_client::quantum_auth::pq::sphincs:   Public key size: 64 bytes
+2025-03-07T15:02:32.150323Z DEBUG qkd_client::quantum_auth::pq::sphincs:   Secret key size: 128 bytes
+2025-03-07T15:02:32.150367Z DEBUG qkd_client::vrf::integrated_vrf: Generating VRF output
+2025-03-07T15:02:32.150397Z DEBUG qkd_client::vrf::core: Generating VRF output from quantum key, input length: 16
+2025-03-07T15:02:32.150494Z DEBUG qkd_client::vrf::core: Generated VRF seed from quantum key and input
+2025-03-07T15:02:32.150618Z DEBUG qkd_client::quantum_auth::hybrid: Generated classical Ed25519 signature in 104.51µs
+2025-03-07T15:02:32.150640Z DEBUG qkd_client::quantum_auth::pq::sphincs: Signing with SPHINCS+ (SPHINCS+-SHA2-256f-simple) - message size: 64B
+2025-03-07T15:02:32.452197Z DEBUG qkd_client::quantum_auth::pq::sphincs: Generated SPHINCS+ signature: 49905B in 298.036272ms
+2025-03-07T15:02:32.452229Z DEBUG qkd_client::quantum_auth::hybrid: Generated quantum SPHINCS+ signature in 301.588933ms
+2025-03-07T15:02:32.452246Z  INFO qkd_client::quantum_auth::hybrid: Hybrid signature generated - classical: 64B, quantum: 49905B, total time: 301.733349ms
+2025-03-07T15:02:32.456052Z DEBUG qkd_client::vrf::core: Serialized signature in 3.790666ms
+2025-03-07T15:02:32.485606Z  INFO qkd_client::vrf::core: VRF output generated successfully: 64 bytes, proof: 66660 bytes
+2025-03-07T15:02:32.485633Z DEBUG qkd_client::vrf::integrated_vrf: Generated VRF output in 335.237332ms
+2025-03-07T15:02:32.485669Z  INFO qkd_client::zk::circuit_manager: Generating proof for circuit: vrf_seed_proof
+2025-03-07T15:02:32.485884Z DEBUG qkd_client::zk::circuit_manager: Created input file at "/home/paraxiom/qkd_client.mar5/circuits/vrf_seed_proof_input.json"
+2025-03-07T15:02:32.485912Z  INFO qkd_client::zk::circuit_manager: Generating witness...
+2025-03-07T15:02:32.704119Z  INFO qkd_client::zk::circuit_manager: ✅ Generated witness successfully
+2025-03-07T15:02:32.704177Z  INFO qkd_client::zk::circuit_manager: Generating proof...
+2025-03-07T15:02:33.319500Z  INFO qkd_client::zk::circuit_manager: ✅ Generated proof successfully
+2025-03-07T15:02:33.319624Z  INFO qkd_client::vrf::integrated_vrf: VRF generation completed in 1.169226468s
+2025-03-07T15:02:33.319977Z  INFO integration_test: Wrote circuit input JSON to "/home/paraxiom/qkd_client.mar5/circuits/vrf_seed_proof_input.json"
+[INFO]  snarkJS: OK!
+2025-03-07T15:02:34.559373Z  INFO integration_test: ✅ ZK Proof verified successfully
+2025-03-07T15:02:34.559428Z DEBUG qkd_client::vrf::integrated_vrf: Verifying VRF output
+2025-03-07T15:02:34.559448Z DEBUG qkd_client::vrf::core: Verifying VRF output, input length: 16
+2025-03-07T15:02:34.564680Z DEBUG qkd_client::quantum_auth::hybrid: Classical signature verified in 295.175µs
+2025-03-07T15:02:34.564712Z DEBUG qkd_client::quantum_auth::pq::sphincs: Verifying SPHINCS+ signature - message size: 64B, signature size: 49905B
+2025-03-07T15:02:34.576531Z  INFO qkd_client::quantum_auth::pq::sphincs: ✅ SPHINCS+ signature verified successfully in 8.051782ms
+2025-03-07T15:02:34.576562Z DEBUG qkd_client::quantum_auth::hybrid: Quantum signature verified in 11.850084ms
+2025-03-07T15:02:34.576578Z  INFO qkd_client::quantum_auth::hybrid: Hybrid signature verified successfully in 12.200133ms
+2025-03-07T15:02:34.576594Z DEBUG qkd_client::vrf::core: VRF signature verified in 17.076307ms
+2025-03-07T15:02:34.606314Z  INFO qkd_client::vrf::core: VRF verification result: valid
+2025-03-07T15:02:34.606344Z  INFO qkd_client::vrf::integrated_vrf: VRF verification completed in 46.898001ms: true
+2025-03-07T15:02:34.606361Z  INFO integration_test: ✅ VRF verification successful
+paraxiom@paraxiom-VMware20-1:~/qkd_client.mar5$ 

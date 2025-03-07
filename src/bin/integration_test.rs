@@ -1,166 +1,142 @@
 //! Simplified QKD Client Integration Test
 //! 
-//! This test uses the QKDClient implementation that we know works
-//! with your existing certificates and QKD device setup
+//! This test retrieves a quantum-secured key, uses it with a hybrid VRF to
+//! generate an output and proof, writes a JSON input for a Circom circuit, and
+//! then calls external commands (via snarkJS) to generate and verify a ZK proof.
+//!
+//! Note: The ZK proof generation currently uses a placeholder since a real
+//! implementation is not available yet.
 
+use qkd_client::reporter::QKDClient; // Adjust the import according to your project structure.
 use qkd_client::vrf::integrated_vrf::IntegratedVRF;
 use qkd_client::quantum_auth::hybrid::HybridAuth;
-use std::error::Error;
-use tracing::{debug, error, info, Level};
+use serde_json::json;
+use std::{error::Error, fs, path::PathBuf, process::Command};
+use tracing::{debug, info, Level};
 use tracing_subscriber::FmtSubscriber;
-use std::path::Path;
-use std::fs::File;
-use std::io::Read;
-use reqwest::{Certificate, Client, Identity};
-use serde::{Deserialize, Serialize};
-use std::time::Duration;
 
-// Helper function to read file contents
-fn read_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
-    debug!("📂 Reading file: {}", path.display());
-    let mut file = File::open(path)?;
-    let mut contents = Vec::new();
-    file.read_to_end(&mut contents)?;
-    debug!("✅ Successfully read {} bytes", contents.len());
-    Ok(contents)
+const CIRCUITS_DIR: &str = "/home/paraxiom/qkd_client.mar5/circuits";
+
+// Helper function to convert a byte slice to a hexadecimal string.
+fn bytes_to_hex_str(bytes: &[u8]) -> String {
+    format!("0x{}", hex::encode(bytes))
 }
 
-// This struct is copied from your working code
-#[derive(Debug, Serialize)]
-struct KeyRequest {
-    sae_id: String,
-    key_size: u32,
-    number_of_keys: u32,
-}
-
-// This struct is copied from your working code
-#[derive(Debug, Deserialize)]
-struct KeyResponse {
-    keys: Vec<Key>,
-}
-
-// This struct is copied from your working code
-#[derive(Debug, Deserialize)]
-struct Key {
-    #[serde(rename = "key_ID")]
-    key_id: String,
-    key: String,
-}
-
-// This is a simplified version of your working QKDClient
-struct QKDClient {
-    client: Client,
-    base_url: String,
-}
-
-impl QKDClient {
-    pub fn new() -> Result<Self, Box<dyn Error>> {
-        // Load certificates - using exact same paths as your working code
-        let p12_path = Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12");
-        let ca_path = Path::new("/home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem");
-        
-        debug!("Loading PKCS#12 and CA certificates...");
-        let pkcs12_bytes = read_file(p12_path)?;
-        let ca_contents = read_file(ca_path)?;
-        let ca_cert = Certificate::from_pem(&ca_contents)?;
-        
-        // Build client with certificates
-        let client = Client::builder()
-            .add_root_certificate(ca_cert)
-            .identity(Identity::from_pkcs12_der(&pkcs12_bytes, "MySecret")?)
-            .danger_accept_invalid_certs(true)
-            .danger_accept_invalid_hostnames(true)
-            .timeout(Duration::from_secs(5))
-            .build()?;
-            
-        Ok(Self {
-            client,
-            base_url: "https://192.168.0.4".to_string(),
-        })
-    }
-    
-    pub async fn get_key(&self) -> Result<(String, Vec<u8>), Box<dyn Error>> {
-        let url = format!("{}/api/v1/keys/bobsae/enc_keys", self.base_url);
-        debug!("Retrieving key from {}", url);
-        
-        // Build request
-        let request = KeyRequest {
-            sae_id: "bobsae".to_string(),
-            key_size: 256,
-            number_of_keys: 1,
-        };
-        
-        // Send request
-        debug!("Sending request: {:?}", request);
-        let response = self
-            .client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await?;
-            
-        let status = response.status();
-        debug!("Response status: {}", status);
-        if !status.is_success() {
-            return Err(format!("Request failed with status: {}", status).into());
+/// Ensure the verification key exists; if not, export it using snarkjs.
+fn ensure_verification_key(circuits_dir: &str) -> Result<(), Box<dyn Error>> {
+    let vkey_path = PathBuf::from(circuits_dir).join("vrf_seed_proof_verification_key.json");
+    if !vkey_path.exists() {
+        info!("Verification key not found. Exporting from proving key...");
+        let status = Command::new("snarkjs")
+            .current_dir(circuits_dir)
+            .args(&[
+                "zkey", "export", "verificationkey",
+                "vrf_seed_proof_final.zkey",
+                "vrf_seed_proof_verification_key.json",
+            ])
+            .status()?;
+        if !status.success() {
+            return Err("Failed to export verification key".into());
         }
-        
-        // Parse response
-        let response_text = response.text().await?;
-        let key_response: KeyResponse = serde_json::from_str(&response_text)?;
-        if key_response.keys.is_empty() {
-            return Err("No keys returned from server".into());
-        }
-        
-        // Decode key from base64
-        let key = base64::decode(&key_response.keys[0].key)?;
-        let key_id = key_response.keys[0].key_id.clone();
-        info!("Successfully retrieved key with ID: {}", key_id);
-        
-        Ok((key_id, key))
+        info!("Verification key exported successfully.");
     }
+    Ok(())
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // Initialize logging
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::DEBUG)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("Failed to set tracing subscriber");
-    
-    info!("Starting simplified QKD client integration test");
-    
-    // Initialize QKD client
+    // Initialize logging.
+    let subscriber = FmtSubscriber::builder().with_max_level(Level::DEBUG).finish();
+    tracing::subscriber::set_global_default(subscriber)?;
+
+    info!("🚀 Starting simplified QKD Client Integration Test");
+
+    // Initialize QKD client and retrieve the quantum key.
     let qkd_client = QKDClient::new()?;
-    
-    // Get quantum key
-    info!("Retrieving quantum key from QKD device");
-    let (key_id, key_bytes) = qkd_client.get_key().await?;
-    info!("Retrieved key: {} ({} bytes)", key_id, key_bytes.len());
-    
-    // Test VRF with quantum key
-    info!("Initializing quantum-resistant VRF");
+    info!("🔑 Retrieving quantum-secured key from QKD server");
+    let key_bytes = qkd_client.get_key().await?; // Now returns Vec<u8>
+    info!("🔑 Quantum key retrieved ({} bytes)", key_bytes.len());
+
+    // Initialize the hybrid VRF.
     let hybrid_auth = HybridAuth::new()?;
-    let vrf = IntegratedVRF::new(hybrid_auth);
-    
-    // Generate randomness
-    info!("Generating randomness using VRF with quantum key");
+    let vrf = IntegratedVRF::new(hybrid_auth)?;
+
+    // Prepare input for VRF.
     let input = b"VRF test input for integration test";
-    let response = vrf.generate_with_proof(input, &key_bytes)?;
-    
-    info!("Generated randomness: {} bytes of output, {} bytes of proof", 
-        response.output.len(), response.vrf_proof.len());
-    
-    // Verify VRF output
-    let valid = vrf.verify_with_proof(input, &response, &key_bytes)?;
-    
+    let mut input_padded = input.to_vec();
+    // Adjust the padding size as expected by your circuit (here using 16 bytes)
+    input_padded.resize(16, 0);
+    let mut quantum_key_padded = key_bytes.clone();
+    quantum_key_padded.resize(16, 0);
+
+    // Generate VRF output and proof.
+    let vrf_response = vrf.generate_with_proof(&input_padded, &quantum_key_padded)?;
+
+    let mut vrf_seed_padded = vrf_response.output.clone();
+    vrf_seed_padded.resize(16, 0);
+
+    // Build JSON input for the Circom circuit using hexadecimal strings.
+    let circuit_input_json = json!({
+        "inputData": bytes_to_hex_str(&input_padded),
+        "quantumKey": bytes_to_hex_str(&quantum_key_padded),
+        "vrfSeed": bytes_to_hex_str(&vrf_seed_padded)
+    });
+
+    let circuit_input_path = PathBuf::from(CIRCUITS_DIR).join("vrf_seed_proof_input.json");
+    fs::write(&circuit_input_path, serde_json::to_string_pretty(&circuit_input_json)?)?;
+    info!("Wrote circuit input JSON to {:?}", circuit_input_path);
+
+    // Ensure that the verification key file exists.
+    ensure_verification_key(CIRCUITS_DIR)?;
+
+    // Run witness generation using Node.js.
+    let witness_status = Command::new("node")
+        .current_dir(CIRCUITS_DIR)
+        .args(&[
+            "vrf_seed_proof_js/generate_witness.js",
+            "vrf_seed_proof_js/vrf_seed_proof.wasm",
+            "vrf_seed_proof_input.json",
+            "vrf_seed_proof_witness.wtns",
+        ])
+        .status()?;
+    if !witness_status.success() {
+        return Err("❌ Witness generation failed".into());
+    }
+
+    // Run proof generation using snarkJS.
+    let proof_status = Command::new("snarkjs")
+        .current_dir(CIRCUITS_DIR)
+        .args(&[
+            "groth16", "prove", "vrf_seed_proof_final.zkey",
+            "vrf_seed_proof_witness.wtns",
+            "vrf_seed_proof_proof.json",
+            "vrf_seed_proof_public.json",
+        ])
+        .status()?;
+    if !proof_status.success() {
+        return Err("❌ ZK Proof generation failed".into());
+    }
+
+    // Verify the proof using snarkJS.
+    let verify_status = Command::new("snarkjs")
+        .current_dir(CIRCUITS_DIR)
+        .args(&[
+            "groth16", "verify", "vrf_seed_proof_verification_key.json",
+            "vrf_seed_proof_public.json",
+            "vrf_seed_proof_proof.json",
+        ])
+        .status()?;
+    if !verify_status.success() {
+        return Err("❌ ZK Proof verification failed".into());
+    }
+    info!("✅ ZK Proof verified successfully");
+
+    // Finally, verify the VRF output using our integrated VRF.
+    let valid = vrf.verify_with_proof(&input_padded, &vrf_response, &quantum_key_padded)?;
     if valid {
         info!("✅ VRF verification successful");
         Ok(())
     } else {
-        error!("❌ VRF verification failed");
-        Err("VRF verification failed".into())
+        Err("❌ VRF verification failed".into())
     }
 }
