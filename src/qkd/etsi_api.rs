@@ -636,8 +636,6 @@ impl ETSIClient {
     /// * `dest_id` - Destination ID
     /// * `specific_key_id` - If provided, use this exact key ID instead of generating a new one
     async fn generate_simulated_key(&self, key_size: usize, dest_id: &str, specific_key_id: Option<&str>) -> Result<QKDKey, Box<dyn Error>> {
-        // Use the specified key_size directly, rather than deriving it from parts
-        
         // Create key ID
         let key_id = if let Some(id) = specific_key_id {
             id.to_string()
@@ -646,15 +644,21 @@ impl ETSIClient {
             format!("{}-{}", unique_id, uuid::Uuid::new_v4())
         };
         
-        // Generate key bytes using a deterministic algorithm based on 
-        // the destination ID and specified key size only
-        let seed_str = format!("{}-{}", dest_id, key_size);
-        let seed = seed_str.as_bytes().iter().fold(0u64, |acc, &x| acc.wrapping_add(x as u64));
+        // Generate key bytes using a FULLY deterministic algorithm based on the key_id
+        // This ensures that both Alice and Bob will get the same key for the same key_id
+        let seed = if let Some(id) = specific_key_id {
+            // If a specific key ID is provided, use it as the seed to ensure consistency
+            id.as_bytes().iter().fold(0u64, |acc, &x| acc.wrapping_add(x as u64))
+        } else {
+            // Otherwise use key_id which contains the UUID
+            key_id.as_bytes().iter().fold(0u64, |acc, &x| acc.wrapping_add(x as u64))
+        };
         
-        // Generate the key bytes using the provided key_size
+        // Generate deterministic key bytes using the seed
         let mut key_bytes = vec![0u8; key_size];
         for i in 0..key_size {
-            let value = ((seed + i as u64).wrapping_mul(0x5DEECE66Du64).wrapping_add(0xBu64)) % 256;
+            // Use a simple deterministic algorithm based on the seed
+            let value = ((seed.wrapping_add(i as u64)).wrapping_mul(0x5DEECE66Du64).wrapping_add(0xBu64)) % 256;
             key_bytes[i] = value as u8;
         }
         
@@ -665,7 +669,7 @@ impl ETSIClient {
             .as_secs();
         
         let qkd_key = QKDKey {
-            key_id,
+            key_id: key_id.clone(),
             key_bytes,
             timestamp: now,
             metadata: KeyMetadata {
@@ -687,7 +691,7 @@ impl ETSIClient {
             }
         }
         
-        info!("Generated simulated key: {}, size: {}", qkd_key.key_id, qkd_key.metadata.key_size);
+        info!("Generated simulated key: {}, size: {}", key_id, key_size);
         Ok(qkd_key)
     }
 }
@@ -844,7 +848,7 @@ mod tests {
         key_data: Vec<u8>,
         root_data: Option<Vec<u8>>,
         auth_token: Option<String>
-    ) -> Result<Self, Box<dyn Error>> {
+    ) -> Result<ETSIClient, Box<dyn Error>> {
         use reqwest::{Certificate, Identity, ClientBuilder};
         
         let base_url = match device_type {
@@ -894,7 +898,7 @@ mod tests {
             
             // Create identity from the combined PEM
             debug!("Creating identity from combined PEM data");
-            let identity = Identity::from_pem(identity_pem.as_bytes())?;
+            let identity = Identity::from_pkcs12_der(identity_pem.as_bytes(), "MySecret")?;
             client_builder = client_builder.identity(identity);
             
             // Add root CA if provided
@@ -912,7 +916,7 @@ mod tests {
         // Create client with certificate
         let client = client_builder.build()?;
         
-        Ok(Self {
+        Ok(ETSIClient {
             base_url: base_url.to_string(),
             client,
             device_type,
