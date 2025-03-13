@@ -17,7 +17,7 @@ pub struct MultiSourceKeyProof {
 }
 
 impl MultiSourceKeyProof {
-    // Generate a new proof from multiple quantum key sources
+    // ✅ Fixed visibility and parameter names
     pub async fn new(
         sources: &[ReporterEntry],
         threshold: usize,
@@ -28,7 +28,7 @@ impl MultiSourceKeyProof {
             sources.len(),
             threshold
         );
-        // Get current directory and set paths
+
         let current_dir = std::env::current_dir()?;
         let circuits_dir = current_dir.join("circuits");
 
@@ -51,6 +51,7 @@ impl MultiSourceKeyProof {
         let input = Self::prepare_input_file(sources, threshold, nonce)?;
         fs::write(&input_path, input.to_string())?;
         debug!("Created multi-source input file at {:?}", input_path);
+
         // Generate witness
         info!("Generating witness for multiple sources...");
         let status = Command::new("snarkjs")
@@ -66,6 +67,7 @@ impl MultiSourceKeyProof {
             return Err("Failed to generate witness for multiple sources".into());
         }
         info!("✅ Generated multi-source witness successfully");
+
         // Generate proof
         info!("Generating multi-source proof...");
         let status = Command::new("snarkjs")
@@ -82,6 +84,7 @@ impl MultiSourceKeyProof {
             return Err("Failed to generate multi-source proof".into());
         }
         info!("✅ Generated multi-source proof successfully");
+
         // Read proof and verification files
         let proof: Value = serde_json::from_str(&fs::read_to_string(&proof_path)?)?;
         let verification_key: Value = serde_json::from_str(&fs::read_to_string(&vkey_path)?)?;
@@ -93,66 +96,47 @@ impl MultiSourceKeyProof {
             .ok_or("Invalid public inputs format")?;
 
         // Check if we have enough elements
-        if inputs.len() < 2 {
-            // If we don't have enough elements, use default values
-            info!("Public inputs don't contain commitment and VRF seed, using defaults");
-            let combined_commitment = "default-commitment".to_string();
-            let vrf_seed = "default-seed".to_string();
-
-            info!("Using default commitment: {}", combined_commitment);
-            info!("Using default VRF seed: {}", vrf_seed);
-
-            Ok(Self {
-                proof,
-                verification_key,
-                public_inputs,
-                combined_commitment,
-                vrf_seed,
-            })
+        let (combined_commitment, vrf_seed) = if inputs.len() >= 2 {
+            (
+                inputs[inputs.len() - 2]
+                    .as_str()
+                    .unwrap_or("unknown-commitment")
+                    .to_string(),
+                inputs[inputs.len() - 1]
+                    .as_str()
+                    .unwrap_or("unknown-seed")
+                    .to_string(),
+            )
         } else {
-            // The last two elements should be combinedCommitment and vrfSeed
-            let combined_commitment = inputs
-                .get(inputs.len() - 2)
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown-commitment")
-                .to_string();
+            info!("Public inputs don't contain commitment and VRF seed, using defaults");
+            ("default-commitment".to_string(), "default-seed".to_string())
+        };
 
-            let vrf_seed = inputs
-                .get(inputs.len() - 1)
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown-seed")
-                .to_string();
+        info!("Generated commitment: {}", combined_commitment);
+        info!("Generated VRF seed: {}", vrf_seed);
 
-            info!("Generated commitment: {}", combined_commitment);
-            info!("Generated VRF seed: {}", vrf_seed);
-
-            Ok(Self {
-                proof,
-                verification_key,
-                public_inputs,
-                combined_commitment,
-                vrf_seed,
-            })
-        }
+        Ok(Self {
+            proof,
+            verification_key,
+            public_inputs,
+            combined_commitment,
+            vrf_seed,
+        })
     }
 
-    // Verify this multi-source proof
     pub fn verify(&self) -> Result<bool, Box<dyn Error>> {
         info!("Verifying multi-source proof...");
 
-        // Get current directory and set paths
         let current_dir = std::env::current_dir()?;
         let circuits_dir = current_dir.join("circuits");
         let proof_verify_path = circuits_dir.join("multi_source_proof_to_verify.json");
         let vkey_path = circuits_dir.join("multi_source_verification_key.json");
         let public_path = circuits_dir.join("multi_source_public.json");
 
-        // Write files for verification
         fs::write(&proof_verify_path, serde_json::to_string(&self.proof)?)?;
         fs::write(&vkey_path, serde_json::to_string(&self.verification_key)?)?;
         fs::write(&public_path, serde_json::to_string(&self.public_inputs)?)?;
 
-        // Verify using snarkjs
         let output = Command::new("snarkjs")
             .args(&[
                 "groth16",
@@ -174,7 +158,6 @@ impl MultiSourceKeyProof {
         Ok(is_valid)
     }
 
-    // Export the proof and public inputs for third-party verification
     pub fn export_for_verification(&self, path: &Path) -> Result<(), Box<dyn Error>> {
         let export_data = json!({
             "proof": self.proof,
@@ -190,17 +173,14 @@ impl MultiSourceKeyProof {
         Ok(())
     }
 
-    // Get the combined commitment (for smart contracts, etc.)
     pub fn get_commitment(&self) -> &str {
         &self.combined_commitment
     }
 
-    // Get the VRF seed
     pub fn get_vrf_seed(&self) -> &str {
         &self.vrf_seed
     }
 
-    // Helper: Check if file exists
     fn check_file_exists(path: PathBuf) -> Result<PathBuf, Box<dyn Error>> {
         if !path.exists() {
             return Err(format!("Required file not found at {:?}", path).into());
@@ -208,23 +188,21 @@ impl MultiSourceKeyProof {
         Ok(path)
     }
 
-    // Helper: Generate JSON input for the circuit
     fn prepare_input_file(
         sources: &[ReporterEntry],
         threshold: usize,
         nonce: u64,
     ) -> Result<Value, Box<dyn Error>> {
-        // Extract just the needed fields for the circuit
-        let source_count = sources.len() as u64;
+        let source_count = sources.len();
 
-        // Create validSources array with correct size (N from the circuit template)
         let mut valid_sources = vec![0; 8];
         for i in 0..std::cmp::min(sources.len(), 8) {
-            valid_sources[i] = 1; // Mark sources as valid up to our count
+            valid_sources[i] = 1;
         }
 
-        // Create simplified input that matches circuit expectations
         let input_json = json!({
+            "threshold": threshold,
+            "nonce": nonce,
             "sourceCount": source_count,
             "validSources": valid_sources
         });

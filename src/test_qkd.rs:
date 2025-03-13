@@ -1,0 +1,9 @@
+use qkd_client::get_quantum_random_bytes;
+
+fn main() {
+    match get_quantum_random_bytes(32) {
+        Ok(bytes) => println!("Got QKD bytes: {:?}", bytes),
+        Err(err) => eprintln!("Error retrieving QKD bytes: {}", err),
+    }
+}
+

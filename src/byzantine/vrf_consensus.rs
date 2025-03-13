@@ -156,7 +156,8 @@ mod tests {
         let auth = HybridAuth::new()?;
         let vrf = IntegratedVRF::new(auth);
         let quantum_key = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-        let consensus = VRFBasedConsensus::new(vrf.expect("Failed to create IntegratedVRF"), 1, quantum_key);
+        let consensus =
+            VRFBasedConsensus::new(vrf.expect("Failed to create IntegratedVRF"), 1, quantum_key);
 
         // Test participants
         let participants = vec![10, 20, 30, 40, 50];

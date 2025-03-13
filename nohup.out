@@ -1,0 +1,9 @@
+error: "--bin" takes one argument.
+Available binaries:
+    hybrid_auth
+    integration_test
+    qkd_client
+    quantum_security_test
+    stand_alone_integration
+    zk_integration_test
+
