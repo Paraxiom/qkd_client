@@ -1,0 +1,8 @@
+{
+  "mode": "alice",
+  "certPath": "/home/paraxiom/qkd_client/certificate/Toshiba/certs",
+  "keyGenerationRate": 1,
+  "simulationMode": true,
+  "byzantineTolerance": 3,
+  "vrfEnabled": true
+}

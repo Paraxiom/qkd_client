@@ -1,64 +1,14 @@
-# Rust build artifacts
-/target/
-**/*.rs.bk
-Cargo.lock
-*.pdb
-
-# Generated certificates and keys
-*.pem
-*.p12
-*.key
-*.crt
-*.csr
-*.srl
-*.der
-
-# IDE and editor files
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-.vim/
-*.sublime-workspace
-*.sublime-project
-
-# Debug logs
+# Generated files
+circuits/*.json
+circuits/*.wtns
 *.log
-debug/
-logs/
+nohup.out
+qkd_architecture_analysis.md
+report.py
 
-# Environment files
-.env
-.env.local
-.env.*.local
-config.local.toml
+# Certificates and sensitive files
+*.p12
+certificate/
 
-# Dependencies
-/vendor/
-
-# Build output
-/dist/
-/out/
-
-# Backup files
-*.bak
-*.backup
-*~
-
-# Operating System
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Test coverage
-coverage/
-*.lcov
-
-# Documentation
-/doc/
-/docs/_build/
-
-# Optional: Comment these out if you want to track them
-# /certificate/
-# /certs/
+# Configuration with sensitive data
+config.json
