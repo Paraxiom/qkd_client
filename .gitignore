@@ -5,7 +5,7 @@ circuits/*.wtns
 nohup.out
 qkd_architecture_analysis.md
 report.py
-
+target
 # Certificates and sensitive files
 *.p12
 certificate/
