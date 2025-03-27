@@ -1,0 +1,24 @@
+# Check circuit information
+snarkjs r1cs info circuits/vrf_seed_proof.r1cs
+
+# Export circuit to JSON
+snarkjs r1cs export json circuits/vrf_seed_proof.r1cs circuit_constraints.json
+
+# Generate witness from input
+node circuits/vrf_seed_proof_js/generate_witness.js \
+  circuits/vrf_seed_proof_js/vrf_seed_proof.wasm \
+  circuits/vrf_input.json \
+  circuits/vrf_witness.wtns
+
+# Generate proof
+snarkjs groth16 prove \
+  circuits/vrf_seed_proof_final.zkey \
+  circuits/vrf_witness.wtns \
+  circuits/vrf_proof.json \
+  circuits/vrf_public.json
+
+# Verify proof
+snarkjs groth16 verify \
+  circuits/vrf_verification_key.json \
+  circuits/vrf_public.json \
+  circuits/vrf_proof.json
