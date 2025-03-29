@@ -79,10 +79,10 @@ lto = true
 
 
 
-# ZK-STARK implementation
+# (commented out by prepare_winterfell.py) # ZK-STARK implementation
 winterfell = "0.8.0"
 
 
 [[bin]]
-name = "vrf_seed_stark_example"
-path = "src/bin/stark_examples/vrf_seed_example.rs"
+# (commented out by prepare_winterfell.py) name = "vrf_seed_stark_example"
+# (commented out by prepare_winterfell.py) path = "src/bin/stark_examples/vrf_seed_example.rs"
