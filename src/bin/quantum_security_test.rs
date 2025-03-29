@@ -4,11 +4,12 @@ use qkd_client::vrf::integrated_vrf::IntegratedVRF;
 use reqwest::{Certificate, Client, Identity};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use tracing::{info, debug, Level};
+use tracing::{debug, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 const BASE_URL: &str = "https://192.168.0.4";
-const ALICE_CERT_PATH: &str = "/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12";
+const ALICE_CERT_PATH: &str =
+    "/home/paraxiom/qkd_client/certificate/Toshiba/certs/client_alice.p12";
 const CA_CERT_PATH: &str = "/home/paraxiom/qkd_client/certificate/Toshiba/certs/ca_crt.pem";
 const P12_PASSWORD: &str = "MySecret";
 
@@ -45,7 +46,11 @@ impl QKDClient {
         })
     }
 
-    pub async fn get_key(&self, sae_id: &str, key_size: u32) -> Result<(String, Vec<u8>), Box<dyn Error>> {
+    pub async fn get_key(
+        &self,
+        sae_id: &str,
+        key_size: u32,
+    ) -> Result<(String, Vec<u8>), Box<dyn Error>> {
         let req_body = serde_json::json!({
             "sae_id": sae_id,
             "key_size": key_size,
@@ -66,44 +71,46 @@ impl QKDClient {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let subscriber = FmtSubscriber::builder().with_max_level(Level::INFO).finish();
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .finish();
     tracing::subscriber::set_global_default(subscriber)?;
-    
+
     info!("🚀 Starting QKD Client Integration Test");
-    
+
     let qkd_client = QKDClient::new()?;
     info!("🔑 Requesting quantum-secured key from QKD server");
     let (key_id, key_bytes) = qkd_client.get_key("bobsae", 256).await?;
     info!("🔑 Retrieved key ID: {}", key_id);
-    
+
     info!("🛡️ Testing Quantum-Resistant VRF");
-    
+
     // Create the hybrid auth
     let hybrid_auth = HybridAuth::new()?;
-    
+
     // Create the VRF - unwrap once
     let vrf = IntegratedVRF::new(hybrid_auth).expect("Failed to create IntegratedVRF");
-    
+
     // Prepare input data
     let input_data = b"Integration test for QKD quantum-resistant VRF";
-    
+
     // Generate VRF output and proof
     let vrf_response = vrf.generate_with_proof(input_data, &key_bytes)?;
-    
+
     info!(
         "VRF Output: {} bytes, Proof: {} bytes",
         vrf_response.output.len(),
         vrf_response.vrf_proof.len()
     );
-    
+
     // Verify the VRF output
     let is_valid = vrf.verify_with_proof(input_data, &vrf_response, &key_bytes)?;
-    
+
     if is_valid {
         info!("✅ VRF verification successful");
     } else {
         return Err("❌ VRF verification failed".into());
     }
-    
+
     Ok(())
 }

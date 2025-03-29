@@ -52,6 +52,14 @@ mockito = "1.6.1"
 uuid = { version = "1.4", features = ["v4"] }
 clap = { version = "4.1", features = ["derive"] }
 tempfile = "3.17.1"
+winterfell = "0.12.0"
+winter-crypto = "0.12.0"
+winter-math = "0.12.0"
+rand_chacha = "0.9.0"
+
+rand_core = "0.9.3"
+
+anyhow = "1.0"
 [dev-dependencies]
 criterion = { version = "0.4", features = ["async_tokio"] }
 
@@ -62,3 +70,13 @@ criterion = { version = "0.4", features = ["async_tokio"] }
 [profile.release]
 opt-level = 3
 lto = true
+
+
+
+# ZK-STARK implementation
+winterfell = "0.8.0"
+
+
+[[bin]]
+name = "vrf_seed_stark_example"
+path = "src/bin/stark_examples/vrf_seed_example.rs"

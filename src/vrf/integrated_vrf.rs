@@ -11,8 +11,8 @@ use tracing::{debug, info, warn};
 pub struct VRFResponse {
     pub output: Vec<u8>,
     pub vrf_proof: Vec<u8>,
-    pub zk_proof: Value,       // The real ZK proof (as JSON)
-    pub public_inputs: Value,  // The public inputs from the circuit
+    pub zk_proof: Value,      // The real ZK proof (as JSON)
+    pub public_inputs: Value, // The public inputs from the circuit
 }
 
 /// Integrated VRF that now generates a real ZK proof using our circuit manager.
@@ -26,7 +26,10 @@ impl IntegratedVRF {
     pub fn new(hybrid_auth: HybridAuth) -> Result<Self, Box<dyn Error>> {
         let vrf = QuantumVRF::new(hybrid_auth);
         let circuit_manager = CircuitManager::new()?;
-        Ok(Self { vrf, circuit_manager })
+        Ok(Self {
+            vrf,
+            circuit_manager,
+        })
     }
 
     /// Generate VRF output and a zero‐knowledge proof.
@@ -61,8 +64,9 @@ impl IntegratedVRF {
         });
 
         // Generate a real ZK proof using the circuit manager.
-        let (zk_proof, public_inputs) =
-            self.circuit_manager.generate_proof("vrf_seed_proof", circuit_input)?;
+        let (zk_proof, public_inputs) = self
+            .circuit_manager
+            .generate_proof("vrf_seed_proof", circuit_input)?;
 
         info!("VRF generation completed in {:?}", start.elapsed());
 
@@ -85,7 +89,8 @@ impl IntegratedVRF {
         let start = Instant::now();
 
         let vrf_valid =
-            self.vrf.verify(input, &response.output, &response.vrf_proof, quantum_key)?;
+            self.vrf
+                .verify(input, &response.output, &response.vrf_proof, quantum_key)?;
         if !vrf_valid {
             warn!("VRF verification failed");
             return Ok(false);

@@ -1,0 +1,897 @@
+use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError};
+use ark_ff::Field;
+
+#[derive(Default)]
+pub struct MyCircuit {
+    // If you need circuit fields, add them here
+}
+
+impl<F: Field> ConstraintSynthesizer<F> for MyCircuit {
+    fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
+        // For a dummy circuit, do nothing:
+        Ok(())
+    }
+}
+
+use serde_json::{json, Value};
+use std::error::Error;
+use std::fs;
+use std::path::PathBuf;
+use std::process::Command;
+use tracing::{debug, error, info};
+
+pub struct CircuitManager {
+    pub circuits_dir: PathBuf,
+}
+
+impl CircuitManager {
+    /// Create a new CircuitManager.
+    /// It expects the current directory joined with "circuits" (adjust if needed).
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        let circuits_dir = std::env::current_dir()?.join("circuits");
+        if !circuits_dir.exists() {
+            return Err(format!("Circuits directory not found: {:?}", circuits_dir).into());
+        }
+        Ok(Self { circuits_dir })
+    }
+
+    /// Generate a proof for a circuit given its base name and JSON input.
+    pub fn generate_proof(
+        &self,
+        circuit_name: &str,
+        input: Value,
+    ) -> Result<(Value, Value), Box<dyn Error>> {
+        info!("Generating proof for circuit: {}", circuit_name);
+
+        // Set up file paths based on your folder structure.
+        let wasm_path = self.circuits_dir.join(format!("{}_js/{}.wasm", circuit_name, circuit_name));
+        let zkey_path = self.circuits_dir.join(format!("{}_final.zkey", circuit_name));
+        let input_path = self.circuits_dir.join(format!("{}_input.json", circuit_name));
+        let witness_path = self.circuits_dir.join(format!("{}_witness.wtns", circuit_name));
+        let proof_path = self.circuits_dir.join(format!("{}_proof.json", circuit_name));
+        let public_path = self.circuits_dir.join(format!("{}_public.json", circuit_name));
+
+        // Write the JSON input to file.
+        fs::write(&input_path, serde_json::to_string_pretty(&input)?)?;
+        debug!("Created input file at {:?}", input_path);
+
+        // Generate the witness.
+        info!("Generating witness...");
+        let status = Command::new("snarkjs")
+            .args(&[
+                "wtns", "calculate",
+                wasm_path.to_str().unwrap(),
+                input_path.to_str().unwrap(),
+                witness_path.to_str().unwrap(),
+            ])
+            .status()?;
+        if !status.success() {
+            error!("Failed to generate witness for circuit: {}", circuit_name);
+            return Err(format!("Failed to generate witness for circuit: {}", circuit_name).into());
+        }
+        info!("✅ Generated witness successfully");
+
+        // Generate the proof.
+        info!("Generating proof...");
+        let status = Command::new("snarkjs")
+            .args(&[
+                "groth16", "prove",
+                zkey_path.to_str().unwrap(),
+                witness_path.to_str().unwrap(),
+                proof_path.to_str().unwrap(),
+                public_path.to_str().unwrap(),
+            ])
+            .status()?;
+        if !status.success() {
+            error!("Failed to generate proof for circuit: {}", circuit_name);
+            return Err(format!("Failed to generate proof for circuit: {}", circuit_name).into());
+        }
+        info!("✅ Generated proof successfully");
+
+        // Read and parse the proof and public inputs.
+        let proof: Value = serde_json::from_str(&fs::read_to_string(&proof_path)?)?;
+        let public_inputs: Value = serde_json::from_str(&fs::read_to_string(&public_path)?)?;
+        Ok((proof, public_inputs))
+    }
+}
+use std::error::Error;
+use tracing::{debug, info, warn};
+
+/// Verifiable Random Function with zero-knowledge capabilities
+///
+/// This implementation allows generating unpredictable randomness from
+/// a seed and proving properties of that randomness without revealing the seed.
+pub struct VerifiableRandomFunction {
+    seed: Vec<u8>,
+}
+
+impl VerifiableRandomFunction {
+    /// Create a new VRF with the given seed
+    pub fn new(seed: &[u8]) -> Self {
+        Self {
+            seed: seed.to_vec(),
+        }
+    }
+
+    /// Generate a deterministic output from the input
+    pub fn generate(&self, input: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        // Simple implementation: hash the input with the seed
+        use sha3::{Digest, Sha3_256};
+        let mut hasher = Sha3_256::new();
+        hasher.update(input);
+        hasher.update(&self.seed);
+        Ok(hasher.finalize().to_vec())
+    }
+
+    /// Verify an output was generated from this input
+    pub fn verify(&self, input: &[u8], output: &[u8]) -> Result<bool, Box<dyn Error>> {
+        let expected = self.generate(input)?;
+        Ok(expected == output)
+    }
+    pub fn prove(&self, input: &[u8]) -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
+        use sha3::{Digest, Sha3_256};
+
+        let mut hasher = Sha3_256::new();
+        hasher.update(input);
+        hasher.update(&self.seed);
+        let vrf_output = hasher.finalize().to_vec();
+
+        // Generate a zero-knowledge proof (stub, replace with real ZK logic)
+        let zk_proof = self.generate_zk_proof(input)?;
+
+        Ok((vrf_output, zk_proof))
+    }
+    pub fn elect_leader(&self, node_count: u64) -> Result<u64, Box<dyn Error>> {
+        use sha3::{Digest, Sha3_256};
+
+        let mut hasher = Sha3_256::new();
+        hasher.update(&self.seed);
+        let hash_output = hasher.finalize();
+        let leader_index = u64::from_le_bytes(hash_output[..8].try_into().unwrap()) % node_count;
+
+        Ok(leader_index)
+    }
+    pub fn select_committee(
+        &self,
+        count: u64,
+        total_nodes: u64,
+    ) -> Result<Vec<u64>, Box<dyn Error>> {
+        if count > total_nodes {
+            return Err("Committee size cannot exceed total nodes".into());
+        }
+
+        use sha3::{Digest, Sha3_256};
+        let mut hasher = Sha3_256::new();
+        hasher.update(&self.seed);
+        let hash_output = hasher.finalize();
+
+        let mut nodes: Vec<u64> = (0..total_nodes).collect();
+        let mut committee = Vec::with_capacity(count as usize);
+
+        for i in 0..count {
+            let i_usize = i as usize; // ✅ Convert `i` from u64 to usize
+            let index = u64::from_le_bytes(hash_output[i_usize..i_usize + 8].try_into().unwrap())
+                % (total_nodes - i);
+
+            committee.push(nodes[index as usize]);
+            nodes.swap_remove(index as usize);
+        }
+
+        Ok(committee)
+    }
+    pub fn from_multi_source_proof(
+        commitment: &str,
+        vrf_seed: &str,
+    ) -> Result<Self, Box<dyn Error>> {
+        // Combine commitment and VRF seed to create a deterministic seed
+        let mut combined = Vec::new();
+        combined.extend_from_slice(commitment.as_bytes());
+        combined.extend_from_slice(vrf_seed.as_bytes());
+
+        // Hash the combined data to create a seed
+        use sha3::{Digest, Sha3_256};
+        let mut hasher = Sha3_256::new();
+        hasher.update(&combined);
+        let seed = hasher.finalize().to_vec();
+
+        Ok(Self { seed })
+    }
+
+    /// Generate a zero-knowledge proof for the VRF
+    pub fn generate_zk_proof(&self, input: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        debug!("Generating ZK proof for VRF");
+
+        // Generate the VRF output
+        let output = self.generate(input)?;
+        debug!("Generated VRF output: {} bytes", output.len());
+
+        // In a real implementation, this would create a circuit-based ZK proof
+        // For now, we'll create a simplified proof
+        let mut proof = Vec::new();
+        proof.extend_from_slice(b"zk-proof-"); // Header
+        proof.extend_from_slice(&output); // Output
+
+        info!("Generated ZK proof: {} bytes", proof.len());
+        Ok(proof)
+    }
+
+    /// Verify a zero-knowledge proof for the VRF
+    pub fn verify_zk_proof(&self, input: &[u8], proof: &[u8]) -> Result<bool, Box<dyn Error>> {
+        debug!("Verifying ZK proof for VRF");
+
+        // Simple verification for the simplified proof format
+        if proof.len() < 9 || &proof[0..9] != b"zk-proof-" {
+            warn!("Invalid ZK proof format");
+            return Ok(false);
+        }
+
+        // Extract output from proof
+        let output = &proof[9..];
+
+        // Verify the output matches what we'd generate
+        let valid = self.verify(input, output)?;
+
+        info!(
+            "ZK proof verification result: {}",
+            if valid { "valid" } else { "invalid" }
+        );
+        Ok(valid)
+    }
+}
+
+/// This creates a deterministic but unpredictable value from a ZK proof seed
+pub fn generate_vrf_proof(quantum_key: &[u8], input_data: &[u8]) -> Result<String, Box<dyn Error>> {
+    debug!("Generating VRF proof from quantum key");
+
+    // Create VRF instance
+    let vrf = VerifiableRandomFunction::new(quantum_key);
+    let output = vrf.generate(input_data)?;
+
+    info!(
+        "Generated VRF proof from quantum key: {} bytes",
+        output.len()
+    );
+    Ok(hex::encode(output))
+}
+
+pub fn verify_vrf_proof(
+    proof: &str,
+    quantum_key: &[u8],
+    input_data: &[u8],
+) -> Result<bool, Box<dyn Error>> {
+    debug!("Verifying VRF proof");
+
+    let vrf = VerifiableRandomFunction::new(quantum_key);
+    let output = hex::decode(proof)?;
+    let result = vrf.verify(input_data, &output)?;
+
+    info!(
+        "VRF proof verification result: {}",
+        if result { "valid" } else { "invalid" }
+    );
+    Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vrf() -> Result<(), Box<dyn Error>> {
+        // Create VRF with test seed
+        let seed = b"test-vrf-seed";
+        let vrf = VerifiableRandomFunction::new(seed);
+
+        // Generate output for test input
+        let input = b"test-input";
+        let output = vrf.generate(input)?;
+
+        // Verify the output
+        let valid = vrf.verify(input, &output)?;
+        assert!(valid, "VRF verification should succeed");
+
+        // Generate and verify ZK proof
+        let proof = vrf.generate_zk_proof(input)?;
+        let zk_valid = vrf.verify_zk_proof(input, &proof)?;
+        assert!(zk_valid, "ZK proof verification should succeed");
+
+        Ok(())
+    }
+}
+// src/zk/proof.rs
+use base64;
+use serde_json::{json, Value};
+use std::error::Error;
+use std::fs;
+use std::process::Command;
+
+pub struct KeyProof {
+    proof: Value,
+    verification_key: Value,
+}
+
+impl KeyProof {
+    pub async fn new(key_b64: &str) -> Result<Self, Box<dyn Error>> {
+        println!("Starting proof generation for key...");
+
+        // Decode base64 key
+        let key_bytes = base64::decode(key_b64)?;
+        println!("Key bytes length: {}", key_bytes.len());
+
+        // Get current directory and set paths
+        let current_dir = std::env::current_dir()?;
+        let circuits_dir = current_dir.join("circuits");
+        let wasm_path = circuits_dir
+            .join("key_verification_js")
+            .join("key_verification.wasm");
+        let input_path = circuits_dir.join("input.json");
+        let witness_path = circuits_dir.join("witness.wtns");
+        let zkey_path = circuits_dir.join("key_verification_0001.zkey");
+        let proof_path = circuits_dir.join("proof.json");
+        let public_path = circuits_dir.join("public.json");
+        let vkey_path = circuits_dir.join("verification_key.json");
+
+        // Verify all required files exist
+        println!("Verifying circuit files...");
+        if !wasm_path.exists() {
+            return Err(format!("WASM file not found at {:?}", wasm_path).into());
+        }
+        if !zkey_path.exists() {
+            return Err(format!("zkey file not found at {:?}", zkey_path).into());
+        }
+        if !vkey_path.exists() {
+            return Err(format!("Verification key not found at {:?}", vkey_path).into());
+        }
+
+        // Create input file
+        let input = json!({
+            "key": key_bytes.iter().map(|&b| b as u64).collect::<Vec<_>>()
+        });
+        fs::write(&input_path, input.to_string())?;
+        println!("Created input file at {:?}", input_path);
+
+        // Generate witness using snarkjs
+        println!("Generating witness...");
+        let status = Command::new("snarkjs")
+            .args(&[
+                "wtns",
+                "calculate",
+                wasm_path.to_str().unwrap(),
+                input_path.to_str().unwrap(),
+                witness_path.to_str().unwrap(),
+            ])
+            .status()?;
+
+        if !status.success() {
+            return Err("Failed to generate witness".into());
+        }
+        println!("✅ Generated witness successfully");
+
+        // Generate proof
+        println!("Generating proof...");
+        let status = Command::new("snarkjs")
+            .args(&[
+                "groth16",
+                "prove",
+                zkey_path.to_str().unwrap(),
+                witness_path.to_str().unwrap(),
+                proof_path.to_str().unwrap(),
+                public_path.to_str().unwrap(),
+            ])
+            .status()?;
+
+        if !status.success() {
+            return Err("Failed to generate proof".into());
+        }
+        println!("✅ Generated proof successfully");
+
+        // Read proof and verification key
+        println!("Reading proof and verification key...");
+        let proof = serde_json::from_str(&fs::read_to_string(&proof_path)?)?;
+        let verification_key = serde_json::from_str(&fs::read_to_string(&vkey_path)?)?;
+        println!("✅ Read proof and verification key successfully");
+
+        Ok(Self {
+            proof,
+            verification_key,
+        })
+    }
+
+    pub fn verify(&self) -> Result<bool, Box<dyn Error>> {
+        println!("Starting proof verification...");
+
+        // Get paths
+        let current_dir = std::env::current_dir()?;
+        let circuits_dir = current_dir.join("circuits");
+        let proof_verify_path = circuits_dir.join("proof_to_verify.json");
+        let vkey_path = circuits_dir.join("verification_key.json");
+        let public_path = circuits_dir.join("public.json");
+
+        // Write files for verification
+        fs::write(&proof_verify_path, serde_json::to_string(&self.proof)?)?;
+        fs::write(&vkey_path, serde_json::to_string(&self.verification_key)?)?;
+        println!("Wrote verification files");
+
+        // Verify using snarkjs
+        println!("Verifying proof...");
+        let output = Command::new("snarkjs")
+            .args(&[
+                "groth16",
+                "verify",
+                vkey_path.to_str().unwrap(),
+                public_path.to_str().unwrap(),
+                proof_verify_path.to_str().unwrap(),
+            ])
+            .output()?;
+
+        let is_valid = output.status.success();
+        if is_valid {
+            println!("✅ Proof verified successfully");
+        } else {
+            println!("❌ Proof verification failed");
+            println!("Error: {}", String::from_utf8_lossy(&output.stderr));
+        }
+
+        Ok(is_valid)
+    }
+}
+pub mod circuit;
+pub mod proof;
+pub mod vrf;
+pub use self::proof::KeyProof;
+pub mod multi_source_generator;
+pub mod multi_source_proof;
+pub mod circuit_manager;
+use ark_bn254::{Bn254, Fr};
+use ark_ff::UniformRand;
+use ark_groth16::{create_random_proof, generate_random_parameters, verify_proof, Proof, ProvingKey, VerifyingKey};
+use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystemRef};
+use ark_std::rand::thread_rng;
+
+// Quantum Identity Circuit: Represents a cryptographic identity proof
+struct IdentityCircuit {
+    private_key: Fr,         // Secret quantum-derived private key
+    public_challenge: Fr,    // Public challenge from the verifier
+    response: Fr,            // private_key * public_challenge (proves knowledge)
+}
+
+impl ConstraintSynthesizer<Fr> for IdentityCircuit {
+    fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> ark_relations::r1cs::Result<()> {
+        // Allocate private key as a **witness** (not revealed)
+        let private_key_var = cs.new_witness_variable(|| Ok(self.private_key))?;
+        
+        // Allocate public challenge as **public input**
+        let challenge_var = cs.new_input_variable(|| Ok(self.public_challenge))?;
+        
+        // Allocate response as **public input**
+        let response_var = cs.new_input_variable(|| Ok(self.response))?;
+        
+        // Enforce response = private_key * challenge
+        cs.enforce_constraint(
+            ark_relations::r1cs::lc!() + private_key_var,
+            ark_relations::r1cs::lc!() + challenge_var,
+            ark_relations::r1cs::lc!() + response_var,
+        )?;
+        
+        Ok(())
+    }
+}
+
+// QuantumIdentity: Handles identity proof generation and verification
+pub struct QuantumIdentity {
+    private_key: Fr,                         // Quantum-derived private key
+    proving_key: ProvingKey<Bn254>,           // Proving key for ZK proof generation
+    verifying_key: VerifyingKey<Bn254>,       // Verifying key for proof verification
+}
+
+impl QuantumIdentity {
+    /// **Initialize QuantumIdentity with a random quantum private key**
+    pub fn new() -> Self {
+        let mut rng = thread_rng();
+        let private_key = Fr::rand(&mut rng); // Quantum-derived randomness
+        
+        // Create a dummy circuit for generating proving and verifying keys
+        let dummy_circuit = IdentityCircuit {
+            private_key,
+            public_challenge: Fr::from(1u32), // Placeholder challenge
+            response: Fr::from(1u32),         // Placeholder response
+        };
+        
+        let (proving_key, verifying_key) =
+            generate_random_parameters::<Bn254, _, _>(dummy_circuit, &mut rng)
+                .expect("Failed to generate ZKP parameters");
+        
+        Self {
+            private_key,
+            proving_key,
+            verifying_key,
+        }
+    }
+
+    /// **Generate a Zero-Knowledge Proof of Identity**
+    pub fn prove_identity(&self) -> Proof<Bn254> {
+        let mut rng = thread_rng();
+        
+        // Generate a random challenge (from verifier)
+        let challenge = Fr::rand(&mut rng);
+        
+        // Compute response = private_key * challenge
+        let response = self.private_key * challenge;
+        
+        // Create circuit instance with values
+        let circuit = IdentityCircuit {
+            private_key: self.private_key,
+            public_challenge: challenge,
+            response,
+        };
+        
+        // Generate ZK proof
+        create_random_proof(circuit, &self.proving_key, &mut rng)
+            .expect("Failed to create proof")
+    }
+
+    /// **Verify a ZK Proof of Identity**
+    pub fn verify(&self, proof: &Proof<Bn254>) -> bool {
+        let mut rng = thread_rng();
+        
+        // In a real system, the challenge would come from an external verifier
+        let challenge = Fr::rand(&mut rng);
+        let response = self.private_key * challenge;
+        
+        // Public inputs for proof verification
+        let public_inputs = vec![challenge, response];
+        
+        // Verify the proof
+        verify_proof(&self.verifying_key, proof, &public_inputs).is_ok()
+    }
+}
+// src/zk/multi_source_proof.rs
+use crate::byzantine::buffer::ReporterEntry;
+use serde_json::{json, Value};
+use std::error::Error;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use tracing::{debug, info};
+
+// Represents a proof for multiple quantum sources
+pub struct MultiSourceKeyProof {
+    proof: Value,
+    verification_key: Value,
+    public_inputs: Value,
+    combined_commitment: String,
+    vrf_seed: String,
+}
+
+impl MultiSourceKeyProof {
+    // Generate a new proof from multiple quantum key sources
+    pub async fn new(
+        sources: &[ReporterEntry],
+        threshold: usize,
+        nonce: u64,
+    ) -> Result<Self, Box<dyn Error>> {
+        info!(
+            "Starting multi-source proof generation for {} sources (threshold: {})",
+            sources.len(),
+            threshold
+        );
+        // Get current directory and set paths
+        let current_dir = std::env::current_dir()?;
+        let circuits_dir = current_dir.join("circuits");
+
+        // Verify required files exist
+        let wasm_path = Self::check_file_exists(
+            circuits_dir
+                .join("multi_source_key_js")
+                .join("multi_source_key.wasm"),
+        )?;
+        let zkey_path = Self::check_file_exists(circuits_dir.join("multi_source_key_0001.zkey"))?;
+        let vkey_path =
+            Self::check_file_exists(circuits_dir.join("multi_source_verification_key.json"))?;
+
+        let input_path = circuits_dir.join("multi_source_input.json");
+        let witness_path = circuits_dir.join("multi_source_witness.wtns");
+        let proof_path = circuits_dir.join("multi_source_proof.json");
+        let public_path = circuits_dir.join("multi_source_public.json");
+
+        // Create input file
+        let input = Self::prepare_input_file(sources, threshold, nonce)?;
+        fs::write(&input_path, input.to_string())?;
+        debug!("Created multi-source input file at {:?}", input_path);
+        // Generate witness
+        info!("Generating witness for multiple sources...");
+        let status = Command::new("snarkjs")
+            .args(&[
+                "wtns",
+                "calculate",
+                wasm_path.to_str().unwrap(),
+                input_path.to_str().unwrap(),
+                witness_path.to_str().unwrap(),
+            ])
+            .status()?;
+        if !status.success() {
+            return Err("Failed to generate witness for multiple sources".into());
+        }
+        info!("✅ Generated multi-source witness successfully");
+        // Generate proof
+        info!("Generating multi-source proof...");
+        let status = Command::new("snarkjs")
+            .args(&[
+                "groth16",
+                "prove",
+                zkey_path.to_str().unwrap(),
+                witness_path.to_str().unwrap(),
+                proof_path.to_str().unwrap(),
+                public_path.to_str().unwrap(),
+            ])
+            .status()?;
+        if !status.success() {
+            return Err("Failed to generate multi-source proof".into());
+        }
+        info!("✅ Generated multi-source proof successfully");
+        // Read proof and verification files
+        let proof: Value = serde_json::from_str(&fs::read_to_string(&proof_path)?)?;
+        let verification_key: Value = serde_json::from_str(&fs::read_to_string(&vkey_path)?)?;
+        let public_inputs: Value = serde_json::from_str(&fs::read_to_string(&public_path)?)?;
+
+        // Extract commitment and VRF seed from public inputs
+        let inputs = public_inputs
+            .as_array()
+            .ok_or("Invalid public inputs format")?;
+
+        // Check if we have enough elements
+        if inputs.len() < 2 {
+            // If we don't have enough elements, use default values
+            info!("Public inputs don't contain commitment and VRF seed, using defaults");
+            let combined_commitment = "default-commitment".to_string();
+            let vrf_seed = "default-seed".to_string();
+
+            info!("Using default commitment: {}", combined_commitment);
+            info!("Using default VRF seed: {}", vrf_seed);
+
+            Ok(Self {
+                proof,
+                verification_key,
+                public_inputs,
+                combined_commitment,
+                vrf_seed,
+            })
+        } else {
+            // The last two elements should be combinedCommitment and vrfSeed
+            let combined_commitment = inputs
+                .get(inputs.len() - 2)
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown-commitment")
+                .to_string();
+
+            let vrf_seed = inputs
+                .get(inputs.len() - 1)
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown-seed")
+                .to_string();
+
+            info!("Generated commitment: {}", combined_commitment);
+            info!("Generated VRF seed: {}", vrf_seed);
+
+            Ok(Self {
+                proof,
+                verification_key,
+                public_inputs,
+                combined_commitment,
+                vrf_seed,
+            })
+        }
+    }
+
+    // Verify this multi-source proof
+    pub fn verify(&self) -> Result<bool, Box<dyn Error>> {
+        info!("Verifying multi-source proof...");
+
+        // Get current directory and set paths
+        let current_dir = std::env::current_dir()?;
+        let circuits_dir = current_dir.join("circuits");
+        let proof_verify_path = circuits_dir.join("multi_source_proof_to_verify.json");
+        let vkey_path = circuits_dir.join("multi_source_verification_key.json");
+        let public_path = circuits_dir.join("multi_source_public.json");
+
+        // Write files for verification
+        fs::write(&proof_verify_path, serde_json::to_string(&self.proof)?)?;
+        fs::write(&vkey_path, serde_json::to_string(&self.verification_key)?)?;
+        fs::write(&public_path, serde_json::to_string(&self.public_inputs)?)?;
+
+        // Verify using snarkjs
+        let output = Command::new("snarkjs")
+            .args(&[
+                "groth16",
+                "verify",
+                vkey_path.to_str().unwrap(),
+                public_path.to_str().unwrap(),
+                proof_verify_path.to_str().unwrap(),
+            ])
+            .output()?;
+
+        let is_valid = output.status.success();
+        if is_valid {
+            info!("✅ Multi-source proof verified successfully");
+        } else {
+            let error = String::from_utf8_lossy(&output.stderr);
+            debug!("❌ Multi-source proof verification failed: {}", error);
+        }
+
+        Ok(is_valid)
+    }
+
+    // Export the proof and public inputs for third-party verification
+    pub fn export_for_verification(&self, path: &Path) -> Result<(), Box<dyn Error>> {
+        let export_data = json!({
+            "proof": self.proof,
+            "public_inputs": self.public_inputs,
+            "verification_key": self.verification_key,
+            "combined_commitment": self.combined_commitment,
+            "vrf_seed": self.vrf_seed
+        });
+
+        fs::write(path, export_data.to_string())?;
+        info!("Exported verification data to {:?}", path);
+
+        Ok(())
+    }
+
+    // Get the combined commitment (for smart contracts, etc.)
+    pub fn get_commitment(&self) -> &str {
+        &self.combined_commitment
+    }
+
+    // Get the VRF seed
+    pub fn get_vrf_seed(&self) -> &str {
+        &self.vrf_seed
+    }
+
+    // Helper: Check if file exists
+    fn check_file_exists(path: PathBuf) -> Result<PathBuf, Box<dyn Error>> {
+        if !path.exists() {
+            return Err(format!("Required file not found at {:?}", path).into());
+        }
+        Ok(path)
+    }
+
+    // Helper: Generate JSON input for the circuit
+    fn prepare_input_file(
+        sources: &[ReporterEntry],
+        threshold: usize,
+        nonce: u64,
+    ) -> Result<Value, Box<dyn Error>> {
+        // Extract just the needed fields for the circuit
+        let source_count = sources.len() as u64;
+
+        // Create validSources array with correct size (N from the circuit template)
+        let mut valid_sources = vec![0; 8];
+        for i in 0..std::cmp::min(sources.len(), 8) {
+            valid_sources[i] = 1; // Mark sources as valid up to our count
+        }
+
+        // Create simplified input that matches circuit expectations
+        let input_json = json!({
+            "sourceCount": source_count,
+            "validSources": valid_sources
+        });
+
+        Ok(input_json)
+    }
+}
+use ark_bn254::Fr;
+use ark_circom::{CircomBuilder, CircomCircuit, CircomConfig};
+use std::error::Error;
+use std::path::PathBuf;
+
+pub async fn build_test_circuit() -> Result<CircomCircuit<Fr>, Box<dyn Error>> {
+    let circuit_path = PathBuf::from("circuits/key_proof.r1cs");
+    let wasm_path = PathBuf::from("circuits/key_proof_js/key_proof.wasm");
+
+    let cfg = CircomConfig::<Fr>::new(wasm_path, circuit_path)?;
+    let builder = CircomBuilder::new(cfg);
+    Ok(builder.build()?)
+}
+// src/zk/multi_source_generator.rs
+use std::error::Error;
+use std::sync::Arc;
+use tracing::info;
+
+use crate::byzantine::buffer::{ReporterEntry, SharedBuffer};
+use crate::byzantine::consensus::{ByzantineConsensus, ConsensusResult};
+use crate::zk::multi_source_proof::MultiSourceKeyProof;
+use crate::zk::vrf::VerifiableRandomFunction;
+
+/// Generator for multi-source proofs from Byzantine consensus
+pub struct MultiSourceProofGenerator {
+    buffer: Arc<SharedBuffer>,
+    threshold: usize,
+}
+
+/// Result of the multi-source proof generation
+pub struct MultiSourceProofResult {
+    pub proof: MultiSourceKeyProof,
+    pub vrf: VerifiableRandomFunction,
+    pub source_count: usize,
+    pub consensus_result: ConsensusResult,
+}
+
+impl MultiSourceProofGenerator {
+    /// Create a new multi-source proof generator
+    pub fn new(buffer: Arc<SharedBuffer>, threshold: usize) -> Self {
+        Self { buffer, threshold }
+    }
+
+    /// Generate a proof from the current state of the buffer
+    pub async fn generate_proof(&self) -> Result<MultiSourceProofResult, Box<dyn Error>> {
+        // Get all reports from the buffer
+        let reports = self.buffer.get_all_reports();
+        if reports.is_empty() {
+            return Err("No reports available for proof generation".into());
+        }
+
+        info!(
+            "Generating multi-source proof from {} reports",
+            reports.len()
+        );
+
+        // Create multi-source proof
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs();
+
+        let proof = MultiSourceKeyProof::new(&reports, self.threshold, nonce).await?;
+
+        // Create a VRF from the proof commitment and seed
+        let vrf = VerifiableRandomFunction::from_multi_source_proof(
+            proof.get_commitment(),
+            proof.get_vrf_seed(),
+        )?;
+
+        // Create a placeholder consensus result (in a real implementation,
+        // this would be the actual result from running Byzantine consensus)
+        let consensus_result = ConsensusResult {
+            success: true,
+            value: Some(proof.get_commitment().as_bytes().to_vec()),
+            reporter_ids: reports.iter().map(|r| r.reporter_id.clone()).collect(),
+            round_duration: std::time::Duration::from_secs(0),
+            round_number: 0,
+            total_messages: reports.len(),
+        };
+
+        Ok(MultiSourceProofResult {
+            proof,
+            vrf,
+            source_count: reports.len(),
+            consensus_result,
+        })
+    }
+
+    /// Generate proof after running Byzantine consensus
+    pub async fn generate_proof_with_consensus(
+        &self,
+        consensus: &ByzantineConsensus,
+    ) -> Result<MultiSourceProofResult, Box<dyn Error>> {
+        info!("Running Byzantine consensus before generating proof");
+
+        let consensus_result = consensus.run_consensus_round()?;
+
+        if !consensus_result.success {
+            return Err("Byzantine consensus failed, cannot generate proof".into());
+        }
+
+        let proof_result = self.generate_proof().await?;
+
+        Ok(MultiSourceProofResult {
+            proof: proof_result.proof,
+            vrf: proof_result.vrf,
+            consensus_result: consensus_result.clone(),
+            source_count: consensus_result.total_messages,
+        })
+    }
+
+    /// Add a report to the buffer
+    pub fn add_report(&self, report: ReporterEntry) {
+        self.buffer.add_report(report);
+    }
+}

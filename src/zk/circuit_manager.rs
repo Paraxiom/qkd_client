@@ -29,12 +29,24 @@ impl CircuitManager {
         info!("Generating proof for circuit: {}", circuit_name);
 
         // Set up file paths based on your folder structure.
-        let wasm_path = self.circuits_dir.join(format!("{}_js/{}.wasm", circuit_name, circuit_name));
-        let zkey_path = self.circuits_dir.join(format!("{}_final.zkey", circuit_name));
-        let input_path = self.circuits_dir.join(format!("{}_input.json", circuit_name));
-        let witness_path = self.circuits_dir.join(format!("{}_witness.wtns", circuit_name));
-        let proof_path = self.circuits_dir.join(format!("{}_proof.json", circuit_name));
-        let public_path = self.circuits_dir.join(format!("{}_public.json", circuit_name));
+        let wasm_path = self
+            .circuits_dir
+            .join(format!("{}_js/{}.wasm", circuit_name, circuit_name));
+        let zkey_path = self
+            .circuits_dir
+            .join(format!("{}_final.zkey", circuit_name));
+        let input_path = self
+            .circuits_dir
+            .join(format!("{}_input.json", circuit_name));
+        let witness_path = self
+            .circuits_dir
+            .join(format!("{}_witness.wtns", circuit_name));
+        let proof_path = self
+            .circuits_dir
+            .join(format!("{}_proof.json", circuit_name));
+        let public_path = self
+            .circuits_dir
+            .join(format!("{}_public.json", circuit_name));
 
         // Write the JSON input to file.
         fs::write(&input_path, serde_json::to_string_pretty(&input)?)?;
@@ -44,7 +56,8 @@ impl CircuitManager {
         info!("Generating witness...");
         let status = Command::new("snarkjs")
             .args(&[
-                "wtns", "calculate",
+                "wtns",
+                "calculate",
                 wasm_path.to_str().unwrap(),
                 input_path.to_str().unwrap(),
                 witness_path.to_str().unwrap(),
@@ -60,7 +73,8 @@ impl CircuitManager {
         info!("Generating proof...");
         let status = Command::new("snarkjs")
             .args(&[
-                "groth16", "prove",
+                "groth16",
+                "prove",
                 zkey_path.to_str().unwrap(),
                 witness_path.to_str().unwrap(),
                 proof_path.to_str().unwrap(),
