@@ -1,0 +1,638 @@
+diff --git a/src/qkd/client.rs b/src/qkd/client.rs
+index 42edfb4..c500c98 100644
+--- a/src/qkd/client.rs
++++ b/src/qkd/client.rs
+@@ -1,4 +1,4 @@
+-use rand::{Rng, thread_rng};
++use rand::{thread_rng, Rng};
+ use zeroize::{Zeroize, ZeroizeOnDrop};
+ 
+ /// Secure buffer for storing key material
+@@ -10,7 +10,7 @@ pub struct SecureBuffer {
+ }
+ 
+ /// QKD Client for retrieving quantum keys
+-/// 
++///
+ /// This is a mock implementation for testing.
+ /// In a real implementation, this would connect to a QKD device or API.
+ #[derive(Clone)]
+@@ -27,9 +27,9 @@ impl QkdClient {
+             auth_token: auth_token.map(String::from),
+         })
+     }
+-    
++
+     /// Get a key by ID
+-    /// 
++    ///
+     /// In a real implementation, this would retrieve the key from a QKD device.
+     /// This mock implementation generates random bytes for testing.
+     pub fn get_key(&self, key_id: &str) -> Result<SecureBuffer, String> {
+@@ -37,27 +37,27 @@ impl QkdClient {
+         if self.endpoint.contains("auth-required") && self.auth_token.is_none() {
+             return Err("Authentication required".to_string());
+         }
+-        
++
+         // Simulate key retrieval delay
+         std::thread::sleep(std::time::Duration::from_millis(50));
+-        
++
+         // In a real implementation, this would contact the QKD system
+         // For testing, we generate a random key
+         let mut rng = thread_rng();
+         let mut data = vec![0u8; 32];
+         rng.fill(&mut data[..]);
+-        
++
+         Ok(SecureBuffer {
+             id: key_id.to_string(),
+             data,
+         })
+     }
+-    
++
+     /// Get the endpoint URL
+     pub fn endpoint(&self) -> &str {
+         &self.endpoint
+     }
+-    
++
+     /// Check if authenticated
+     pub fn is_authenticated(&self) -> bool {
+         self.auth_token.is_some()
+@@ -67,14 +67,14 @@ impl QkdClient {
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+-    
++
+     #[test]
+     fn test_create_client() {
+         let client = QkdClient::new("https://qkd-server.example.com", None).unwrap();
+         assert_eq!(client.endpoint(), "https://qkd-server.example.com");
+         assert!(!client.is_authenticated());
+     }
+-    
++
+     #[test]
+     fn test_get_key() {
+         let client = QkdClient::new("https://qkd-server.example.com", None).unwrap();
+@@ -82,4 +82,4 @@ mod tests {
+         assert_eq!(key.id, "test-key");
+         assert_eq!(key.data.len(), 32);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/qkd/mod.rs b/src/qkd/mod.rs
+index d080f7f..6d8c78c 100644
+--- a/src/qkd/mod.rs
++++ b/src/qkd/mod.rs
+@@ -3,4 +3,4 @@ pub mod etsi_api;
+ pub mod key_manager;
+ 
+ // Re-export the client for convenience
+-pub use client::QkdClient;
+\ No newline at end of file
++pub use client::QkdClient;
+diff --git a/src/zk/mod.rs b/src/zk/mod.rs
+index cdc8d35..1119b9e 100644
+--- a/src/zk/mod.rs
++++ b/src/zk/mod.rs
+@@ -5,6 +5,6 @@ pub use self::proof::KeyProof;
+ pub mod circuit_manager;
+ pub mod multi_source_generator;
+ pub mod multi_source_proof;
+-pub mod stark{
++pub mod stark {
+     pub mod winterfell;
+ }
+diff --git a/src/zk/stark/winterfell/mod.rs b/src/zk/stark/winterfell/mod.rs
+index 8c81faa..3ce7bd0 100644
+--- a/src/zk/stark/winterfell/mod.rs
++++ b/src/zk/stark/winterfell/mod.rs
+@@ -1,66 +1,66 @@
+ //! Winterfell-based STARK implementation for VRF proofs integrated with QKD
+-//! 
++//!
+ //! This module provides a complete implementation for generating and verifying
+ //! STARK proofs for VRF computations using quantum-derived keys.
+ // Adding modules incrementally
+ pub mod vrf_air;
+-pub mod vrf_trace;
+ pub mod vrf_prover;
++pub mod vrf_trace;
+ // pub mod vrf_verifier;
+ // pub mod qkd_bridge;
+ // pub mod config;
+ // mod implementation;
+ // Export core types
+-pub use vrf_trace::{build_vrf_trace, PrecomputedTables, TraceError, Felt};
+-pub use vrf_prover::{VrfProver, VrfPublicInputs, VrfError, SomeError, PerformanceMode};
++pub use vrf_prover::{PerformanceMode, SomeError, VrfError, VrfProver, VrfPublicInputs};
++pub use vrf_trace::{build_vrf_trace, Felt, PrecomputedTables, TraceError};
+ // Add a simple function to demonstrate the entire flow
+ pub fn run_simple_example() -> Result<(), String> {
++    use winter_air::{BatchingMethod, FieldExtension};
+     use winterfell::ProofOptions;
+-    use winter_air::{FieldExtension, BatchingMethod};
+-    
++
+     // Create a placeholder BatchingMethod value
+     // This is unsafe but necessary since we don't know the valid variants
+     let batching = {
+         // Create a zero-initialized value for BatchingMethod
+         // This is a temporary solution to get the code to compile
+         #[allow(unused_unsafe)]
+-        unsafe { 
+-            std::mem::zeroed::<BatchingMethod>() 
++        unsafe {
++            std::mem::zeroed::<BatchingMethod>()
+         }
+     };
+-    
++
+     // Create proof options
+     let options = ProofOptions::new(
+-        16,   // queries
+-        4,    // blowup factor
+-        8,    // grinding factor
++        16,                        // queries
++        4,                         // blowup factor
++        8,                         // grinding factor
+         FieldExtension::Quadratic, // field extension
+-        4,    // FRI folding factor
+-        31,   // FRI max remainder size
+-        batching, // first batching method
+-        batching  // second batching method
++        4,                         // FRI folding factor
++        31,                        // FRI max remainder size
++        batching,                  // first batching method
++        batching,                  // second batching method
+     );
+-    
++
+     // Create prover
+     let prover = VrfProver::new(options);
+-    
++
+     // Create example inputs
+     let key = [1u8; 32];
+     let input = [2u8; 32];
+-    
++
+     // Create public inputs
+     let pub_inputs = VrfPublicInputs::new(&input, &input)
+         .map_err(|e| format!("Failed to create public inputs: {:?}", e))?;
+-    
++
+     // Generate proof (might fail in our simplified implementation)
+     let proof_result = prover.build_proof(&key, &input, &pub_inputs);
+-    
++
+     // For this example, we don't care if the proof generation fails
+     match proof_result {
+         Ok(_) => println!("Proof generated successfully"),
+         Err(e) => println!("Proof generation failed: {:?}", e),
+     }
+-    
++
+     Ok(())
+ }
+ 
+@@ -68,28 +68,28 @@ pub fn run_simple_example() -> Result<(), String> {
+ mod tests {
+     use super::*;
+     use winterfell::Trace;
+-    
++
+     #[test]
+     fn test_basic_integration() {
+         // Test that vrf_air and vrf_trace work together
+         let input = [1u8; 32];
+         let output = [2u8; 32];
+-        
++
+         // Create public inputs
+         let pub_inputs = VrfPublicInputs::new(&input, &output).unwrap();
+         assert_eq!(pub_inputs.input_hash.len(), 4);
+-        
++
+         // Create a trace
+         let key = [3u8; 32];
+         let trace = build_vrf_trace(&key, &input).unwrap();
+         assert!(trace.width() > 0);
+         assert!(trace.length() > 0);
+     }
+-    
++
+     #[test]
+     fn test_run_example() {
+         // Test that our example runs without errors
+         let result = run_simple_example();
+         assert!(result.is_ok());
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/zk/stark/winterfell/vrf_air.rs b/src/zk/stark/winterfell/vrf_air.rs
+index 5ff224b..7ecabbe 100644
+--- a/src/zk/stark/winterfell/vrf_air.rs
++++ b/src/zk/stark/winterfell/vrf_air.rs
+@@ -1,10 +1,10 @@
++use thiserror::Error;
++use winter_air::{BatchingMethod, FieldExtension};
++use winter_math::{fields::f128::BaseElement, FieldElement, ToElements};
+ use winterfell::{
+-    Air, AirContext, Assertion, EvaluationFrame, ProofOptions, 
+-    TraceInfo, TransitionConstraintDegree
++    Air, AirContext, Assertion, EvaluationFrame, ProofOptions, TraceInfo,
++    TransitionConstraintDegree,
+ };
+-use winter_math::{FieldElement, fields::f128::BaseElement, ToElements};
+-use winter_air::{FieldExtension, BatchingMethod};
+-use thiserror::Error;
+ 
+ // Define the field element type we'll use
+ pub type Felt = BaseElement;
+@@ -18,7 +18,7 @@ const STATE_WIDTH: usize = 4;
+ pub struct VrfPublicInputs {
+     // Initial hash of the input data (as field elements)
+     pub input_hash: [Felt; 4],
+-    
++
+     // Expected output (as field elements)
+     pub expected_output: [Felt; 4],
+ }
+@@ -29,11 +29,33 @@ impl VrfPublicInputs {
+         if input_hash.len() < 32 || expected_output.len() < 32 {
+             return Err(VrfError::InputTooShort);
+         }
+-        
+-        // Create placeholder field elements
+-        let input_hash_felts = [Felt::from(1u64); 4];
+-        let output_felts = [Felt::from(2u64); 4];
+-        
++
++        // Convert input hash bytes to field elements (4 elements of 64 bits each)
++        let mut input_hash_felts = [Felt::ZERO; 4];
++        for i in 0..4 {
++            let offset = i * 8;
++            if offset + 8 <= input_hash.len() {
++                let bytes = &input_hash[offset..offset + 8];
++                let value = u64::from_le_bytes([
++                    bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
++                ]);
++                input_hash_felts[i] = Felt::from(value);
++            }
++        }
++
++        // Convert expected output bytes to field elements
++        let mut output_felts = [Felt::ZERO; 4];
++        for i in 0..4 {
++            let offset = i * 8;
++            if offset + 8 <= expected_output.len() {
++                let bytes = &expected_output[offset..offset + 8];
++                let value = u64::from_le_bytes([
++                    bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
++                ]);
++                output_felts[i] = Felt::from(value);
++            }
++        }
++
+         Ok(VrfPublicInputs {
+             input_hash: input_hash_felts,
+             expected_output: output_felts,
+@@ -65,15 +87,18 @@ impl VrfAir {
+             TransitionConstraintDegree::new(1), // Second constraint degree
+             TransitionConstraintDegree::new(1), // Third constraint degree
+         ];
+-        
++
+         let context = AirContext::new(
+             trace_info,
+             degrees,
+             STATE_WIDTH, // state width parameter
+-            options
++            options,
+         );
+-        
+-        Self { context, pub_inputs }
++
++        Self {
++            context,
++            pub_inputs,
++        }
+     }
+ }
+ 
+@@ -95,15 +120,15 @@ impl Air for VrfAir {
+     ) {
+         let current = frame.current();
+         let next = frame.next();
+-        
++
+         // Define a very simple VRF state transition - just for compilation
+-        
++
+         // First constraint: next[0] = current[0] + 1
+         result[0] = next[0] - (current[0] + E::ONE);
+-        
++
+         // Second constraint: next[1] = current[1] + current[0]
+         result[1] = next[1] - (current[1] + current[0]);
+-        
++
+         // Third constraint: next[2] = current[2] + 2
+         result[2] = next[2] - (current[2] + E::ONE + E::ONE);
+     }
+@@ -117,10 +142,10 @@ impl Air for VrfAir {
+ pub enum VrfError {
+     #[error("Input data too short")]
+     InputTooShort,
+-    
++
+     #[error("Invalid field element")]
+     InvalidFieldElement,
+-    
++
+     #[error("Conversion error: {0}")]
+     ConversionError(String),
+ }
+@@ -128,20 +153,20 @@ pub enum VrfError {
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+-    use winterfell::{TraceTable, Trace};
+-    
++    use winterfell::{Trace, TraceTable};
++
+     #[test]
+     fn test_create_public_inputs() {
+         let input = [1u8; 32];
+         let output = [2u8; 32];
+-        
++
+         let pub_inputs = VrfPublicInputs::new(&input, &output).unwrap();
+-        
++
+         // Simple assertion to make sure it creates without errors
+         assert_eq!(pub_inputs.input_hash.len(), 4);
+         assert_eq!(pub_inputs.expected_output.len(), 4);
+     }
+-    
++
+     #[test]
+     fn test_create_air() {
+         // Create a minimal trace
+@@ -151,29 +176,29 @@ mod tests {
+                 trace.set(i, j, Felt::from((i * 4 + j) as u64));
+             }
+         }
+-        
++
+         // Create minimal public inputs
+         let pub_inputs = VrfPublicInputs {
+             input_hash: [Felt::from(1u64); 4],
+             expected_output: [Felt::from(2u64); 4],
+         };
+-        
++
+         // Create minimal proof options
+         let options = ProofOptions::new(
+-            16,  // queries
+-            4,   // blowup factor
+-            8,   // grinding factor
++            16,                                    // queries
++            4,                                     // blowup factor
++            8,                                     // grinding factor
+             winter_air::FieldExtension::Quadratic, // field extension
+-            4,   // fri folding factor
+-            31,  // fri max remainder size
++            4,                                     // fri folding factor
++            31,                                    // fri max remainder size
+             BatchingMethod::StdPlonk, // first batching method - try a different variant
+-            BatchingMethod::StdPlonk  // second batching method - try a different variant
++            BatchingMethod::StdPlonk, // second batching method - try a different variant
+         );
+-        
++
+         // Create AIR
+         let air = VrfAir::new(trace.info().clone(), pub_inputs, options);
+-        
++
+         // Simple assertion to ensure it creates without errors
+         assert_eq!(air.context().trace_len(), 8);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/zk/stark/winterfell/vrf_prover.rs b/src/zk/stark/winterfell/vrf_prover.rs
+index aae86bd..f2faf44 100644
+--- a/src/zk/stark/winterfell/vrf_prover.rs
++++ b/src/zk/stark/winterfell/vrf_prover.rs
+@@ -56,22 +56,38 @@ impl VrfProver {
+     }
+     
+     /// Build a proof for a VRF computation
+-    pub fn build_proof(
+-        &self,
+-        quantum_key: &[u8],
+-        input: &[u8],
+-        _public_inputs: &VrfPublicInputs,
+-    ) -> Result<Proof, SomeError> {
+-        // Build the execution trace
+-        let _trace = build_vrf_trace(quantum_key, input)
+-            .map_err(|e| SomeError::TraceGenerationFailed(format!("{:?}", e)))?;
+-            
+-        // For testing purposes, return a dummy proof
+-        debug!("Generating STARK proof...");
+-        
+-        // Use new_dummy function instead of default
+-        Ok(Proof::new_dummy())
+-    }
++    /// Build a proof for a VRF computation
++pub fn build_proof(
++    &self,
++    quantum_key: &[u8],
++    input: &[u8],
++    public_inputs: &VrfPublicInputs,
++) -> Result<Proof, SomeError> {
++    // Step 1: Build the execution trace
++    let trace = build_vrf_trace(quantum_key, input)
++        .map_err(|e| SomeError::TraceGenerationFailed(format!("{:?}", e)))?;
++    
++    debug!("Generated execution trace of width {} and length {}", 
++           trace.width(), trace.length());
++    
++    // Step 2: Create an AIR instance
++    // Since we can't use the original VrfAir, we'll create a simpler version here
++    
++    // In a real implementation, you would:
++    // 1. Define constraints that relate the trace rows
++    // 2. Create a prover that can generate a STARK proof
++    // 3. Use the prover to generate the proof
++    
++    // For now, we'll return a dummy proof
++    debug!("Generating STARK proof (placeholder)...");
++    
++    // In a real implementation, this would be:
++    // let prover = StarkProver::new(...);
++    // prover.prove(&trace)
++    
++    // Dummy implementation for compiler satisfaction
++    Ok(Proof::new_dummy())
++}
+     
+     /// Creates default proof options for testing
+     pub fn default_test_options() -> ProofOptions {
+diff --git a/src/zk/stark/winterfell/vrf_trace.rs b/src/zk/stark/winterfell/vrf_trace.rs
+index 5ca8969..4e8c29c 100644
+--- a/src/zk/stark/winterfell/vrf_trace.rs
++++ b/src/zk/stark/winterfell/vrf_trace.rs
+@@ -1,9 +1,9 @@
+-use winterfell::TraceTable;
++use std::cmp::min;
+ use winter_math::fields::f128::BaseElement;
+-
++use winterfell::TraceTable;
+ // Define our field element type
+ pub type Felt = BaseElement;
+-
++use winter_math::FieldElement;
+ // Constants for the trace
+ const NUM_COLUMNS: usize = 4;
+ const MIN_TRACE_LENGTH: usize = 8;
+@@ -19,30 +19,78 @@ impl PrecomputedTables {
+     pub fn new() -> Self {
+         // Generate a very simple set of constants
+         let round_constants = vec![
+-            [Felt::from(1u64), Felt::from(2u64), Felt::from(3u64), Felt::from(4u64)],
+-            [Felt::from(5u64), Felt::from(6u64), Felt::from(7u64), Felt::from(8u64)],
++            [
++                Felt::from(1u64),
++                Felt::from(2u64),
++                Felt::from(3u64),
++                Felt::from(4u64),
++            ],
++            [
++                Felt::from(5u64),
++                Felt::from(6u64),
++                Felt::from(7u64),
++                Felt::from(8u64),
++            ],
+         ];
+-        
++
+         Self { round_constants }
+     }
+ }
+ 
+ /// Generate a VRF execution trace
+-pub fn build_vrf_trace(
+-    _quantum_key: &[u8], 
+-    _input: &[u8]
+-) -> Result<TraceTable<Felt>, TraceError> {
+-    // Create a very simple trace for now
+-    let trace_length = 8;
++/// Generate a VRF execution trace
++pub fn build_vrf_trace(quantum_key: &[u8], input: &[u8]) -> Result<TraceTable<Felt>, TraceError> {
++    // Ensure the key has sufficient length
++    if quantum_key.len() < 32 {
++        return Err(TraceError::InsufficientKeyMaterial);
++    }
++
++    // We'll implement a simple HMAC-based VRF
++    // For a real implementation, you might want to use a more sophisticated approach
++
++    // Step 1: Create the trace table with appropriate dimensions
++    let trace_length = 16; // Power of 2 is often preferred for STARKs
+     let mut trace = TraceTable::new(NUM_COLUMNS, trace_length);
+-    
+-    // Fill with placeholders
+-    for i in 0..trace_length {
+-        for j in 0..NUM_COLUMNS {
+-            trace.set(i, j, Felt::from((i * NUM_COLUMNS + j) as u64));
+-        }
++
++    // Step 2: Initialize the first state with input
++    let mut state = [Felt::ZERO; 4];
++
++    // Convert first 16 bytes of input to state (simplistic approach)
++    for i in 0..min(4, input.len() / 4) {
++        let bytes = &input[i * 4..(i + 1) * 4];
++        let value = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
++        state[i] = Felt::from(value as u64);
++    }
++
++    // Set the initial state in the trace
++    for i in 0..4 {
++        trace.set(0, i, state[i]);
+     }
+-    
++
++    // Step 3: Apply multiple rounds of mixing
++    for step in 1..trace_length {
++        // Mix state with key material
++        let key_offset = (step - 1) % (quantum_key.len() - 3);
++        let key_chunk = &quantum_key[key_offset..key_offset + 4];
++        let key_value =
++            u32::from_le_bytes([key_chunk[0], key_chunk[1], key_chunk[2], key_chunk[3]]);
++        let key_felt = Felt::from(key_value as u64);
++
++        // Simple state update (in a real implementation, use a proper cryptographic primitive)
++        let prev_state = [
++            trace.get(step - 1, 0),
++            trace.get(step - 1, 1),
++            trace.get(step - 1, 2),
++            trace.get(step - 1, 3),
++        ];
++
++        // Update each state element
++        trace.set(step, 0, prev_state[0] + prev_state[1] + key_felt);
++        trace.set(step, 1, prev_state[1] * prev_state[2]);
++        trace.set(step, 2, prev_state[2] + prev_state[3]);
++        trace.set(step, 3, prev_state[3] * key_felt + prev_state[0]);
++    }
++
+     Ok(trace)
+ }
+ 
+@@ -50,10 +98,10 @@ pub fn build_vrf_trace(
+ pub enum TraceError {
+     #[error("Insufficient key material")]
+     InsufficientKeyMaterial,
+-    
++
+     #[error("Conversion error")]
+     ConversionError,
+-    
++
+     #[error("Invalid trace length")]
+     InvalidTraceLength,
+ }
+@@ -62,17 +110,17 @@ pub enum TraceError {
+ mod tests {
+     use super::*;
+     use winterfell::Trace;
+-    
++
+     #[test]
+     fn test_build_vrf_trace() {
+         let key = [1u8; 32];
+         let input = [2u8; 16];
+-        
++
+         let result = build_vrf_trace(&key, &input);
+         assert!(result.is_ok());
+-        
++
+         let trace = result.unwrap();
+         assert_eq!(trace.width(), NUM_COLUMNS);
+         assert!(trace.length() >= MIN_TRACE_LENGTH);
+     }
+-}
+\ No newline at end of file
++}

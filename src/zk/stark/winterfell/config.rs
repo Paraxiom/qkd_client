@@ -7,7 +7,7 @@ use winter_air::{FieldExtension, BatchingMethod};
 use crate::zk::stark::winterfell::vrf_prover::{VrfProver, PerformanceMode};
 use thiserror::Error;
 use tracing::{info, warn, debug};
-
+use winterfell::BatchingMethod;
 /// Configuration for the QKD STARK Integration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QkdStarkConfig {
@@ -183,8 +183,8 @@ impl QkdStarkConfig {
             FieldExtension::None,  // Field extension parameter
             self.stark_params.fri_max_remainder_size,
             self.stark_params.fri_folding_factor,
-            BatchingMethod::None,  // First batching method
-            BatchingMethod::None   // Second batching method
+            BatchingMethod::Linear,  // First batching method - use actual enum variant
+            BatchingMethod::Linear   // Second batching method - use actual enum variant
         );
         
         let mut prover = VrfProver::new(options);
