@@ -1,5 +1,5 @@
 // src/qkd/key_manager.rs
-use crate::qkd::etsi_api::{DeviceType, ETSIClient, KeyStatus, QKDKey, Side};
+use crate::qkd::etsi_api::{DeviceType, ETSIClient, QKDKey, Side};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
