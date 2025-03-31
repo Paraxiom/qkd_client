@@ -4,9 +4,17 @@ use rand::{thread_rng, Rng};
 use thiserror::Error;
 use tracing::{debug, error};
 
+// Fix imports - use consistent paths and remove duplicates
+use winterfell::matrix::ColMatrix;
+use winterfell::{
+    CompositionPoly, CompositionPolyTrace, StarkDomain, PartitionOptions,
+    DefaultTraceLde, DefaultConstraintCommitment, DefaultConstraintEvaluator, 
+    TracePolyTable
+};
+
 use crate::zk::stark::winterfell::vrf_air::VrfPublicInputs;
-use winter_air::BatchingMethod;
-use winter_air::FieldExtension;
+use winter_air::{AuxRandElements, ConstraintCompositionCoefficients};
+use winter_air::{BatchingMethod, FieldExtension};
 use winter_crypto::hashers::Blake3_256;
 use winter_crypto::DefaultRandomCoin;
 use winter_crypto::MerkleTree;
@@ -33,12 +41,6 @@ impl ProofExt for Proof {
         std::ptr::eq(self, &dummy)
     }
 }
-
-
-
-
-
-
 
 #[derive(Debug, Error)]
 pub enum VrfError {
@@ -184,16 +186,16 @@ impl VrfProver {
     }
     pub fn default_test_options() -> ProofOptions {
         use winter_air::{BatchingMethod, FieldExtension};
-        
+
         ProofOptions::new(
-            16,                        // queries
-            4,                         // blowup factor
-            8,                         // grinding factor
-            FieldExtension::None,      // field extension
-            4,                         // FRI folding factor
-            31,                        // FRI max remainder size
-            BatchingMethod::Linear,    // first batching method
-            BatchingMethod::Linear     // second batching method
+            16,                     // queries
+            4,                      // blowup factor
+            8,                      // grinding factor
+            FieldExtension::None,   // field extension
+            4,                      // FRI folding factor
+            31,                     // FRI max remainder size
+            BatchingMethod::Linear, // first batching method
+            BatchingMethod::Linear, // second batching method
         )
     }
     /// Create a new VRF prover with the given proof options
@@ -335,80 +337,121 @@ impl VrfProver {
     }
 
     /// Generate a real STARK proof using the Winterfell library
-    fn generate_real_proof<A: Air<BaseField = Felt>>(
-        &self,
-        trace: &TraceTable<Felt>,
-        air: &A,
-    ) -> Result<Proof, SomeError> {
-        // TODO: Implement real proof generation using Winterfell
-        // This would typically involve:
-        // 1. Creating a custom prover struct that implements the Prover trait
-        // 2. Setting up the necessary types for the Prover trait implementation
-        // 3. Calling the prove method with the trace
-
-        // The following is a structured implementation outline that will compile
-        // but still returns a dummy proof until fully implemented
-
-        // Define the VRF-specific prover that will implement the Winterfell Prover trait
-        struct VrfStarkProver {
-            options: ProofOptions,
-        }
-
-        // This is what a real implementation would look like
-        // (commented to preserve compilation while showing the structure)
-        /*
-        // Define the necessary types for the Prover trait implementation
-        impl Prover for VrfStarkProver {
-            type BaseField = Felt;
-            type Air = A;
-            type Trace = TraceTable<Self::BaseField>;
-            type HashFn = Blake3_256<Self::BaseField>;
-            type VC = MerkleTree<Self::HashFn>;
-            type RandomCoin = DefaultRandomCoin<Self::HashFn>;
-            type TraceLde<E: FieldElement<BaseField = Self::BaseField>> =
-                DefaultTraceLde<E, Self::HashFn, Self::VC>;
-            type ConstraintCommitment<E: FieldElement<BaseField = Self::BaseField>> =
-                DefaultConstraintCommitment<E, Self::HashFn, Self::VC>;
-            type ConstraintEvaluator<'a, E: FieldElement<BaseField = Self::BaseField>> =
-                DefaultConstraintEvaluator<'a, Self::Air, E>;
-
-            // Get public inputs from the trace
-            fn get_pub_inputs(&self, trace: &Self::Trace) -> A::PublicInputs {
-                // This would extract the public inputs from the trace
-                // For example, extracting the first and last elements
-                // This is a placeholder - real implementation would vary
-                let first_element = trace.get(0, 0);
-                let last_step = trace.length() - 1;
-                let last_element = trace.get(0, last_step);
-
-                // This would convert these elements to the public inputs format
-                // needed by the AIR implementation
-                // This is just a placeholder
-                unimplemented!("Implement public inputs extraction from trace")
-            }
-
-            // Return the proof options
-            fn options(&self) -> &ProofOptions {
-                &self.options
-            }
-
-            // The following methods would need to be implemented for a complete solution
-            // but are omitted for brevity (they have default implementations in Winterfell)
-        }
-
-        // Create an instance of our custom prover
-        let prover = VrfStarkProver {
-            options: self.options.clone()
-        };
-
-        // Generate the proof using the Winterfell prove method
-        let proof = prover.prove(trace.clone())?;
-        */
-
-        // For now, return a dummy proof to allow compilation
-        debug!("Note: Currently generating a dummy proof - real implementation pending");
-        Ok(Proof::new_dummy())
+fn generate_real_proof<A: Air<BaseField = Felt>>(
+    &self,
+    trace: &TraceTable<Felt>,
+    air: &A,
+) -> Result<Proof, SomeError> {
+    // Define the VRF-specific prover that will implement the Winterfell Prover trait
+    struct VrfStarkProver {
+        options: ProofOptions,
+        pub_inputs: VrfPublicInputs,
     }
+    
+    // Implement the Prover trait for our prover
+    impl Prover for VrfStarkProver {
+        type BaseField = Felt;
+        type Air = FalconVrfAir;
+        type Trace = TraceTable<Self::BaseField>;
+        type HashFn = Blake3_256<Self::BaseField>;
+        type VC = MerkleTree<Self::HashFn>;
+        type RandomCoin = DefaultRandomCoin<Self::HashFn>;
+        type TraceLde<E: FieldElement<BaseField = Self::BaseField>> =
+            DefaultTraceLde<E, Self::HashFn, Self::VC>;
+        type ConstraintCommitment<E: FieldElement<BaseField = Self::BaseField>> =
+            DefaultConstraintCommitment<E, Self::HashFn, Self::VC>;
+        type ConstraintEvaluator<'a, E: FieldElement<BaseField = Self::BaseField>> =
+            DefaultConstraintEvaluator<'a, Self::Air, E>;
+        
+        // Implementation of required methods
+        fn get_pub_inputs(&self, _trace: &Self::Trace) -> VrfPublicInputs {
+            self.pub_inputs.clone()
+        }
+        
+        fn options(&self) -> &ProofOptions {
+            &self.options
+        }
+        
+        fn new_trace_lde<E: FieldElement<BaseField = Self::BaseField>>(
+            &self,
+            trace_info: &TraceInfo,
+            main_trace: &ColMatrix<Self::BaseField>,
+            domain: &StarkDomain<Self::BaseField>,
+            partition_option: PartitionOptions,
+        ) -> (Self::TraceLde<E>, TracePolyTable<E>) {
+            DefaultTraceLde::new(trace_info, main_trace, domain, partition_option)
+        }
+        
+        fn new_evaluator<'a, E: FieldElement<BaseField = Self::BaseField>>(
+            &self,
+            air: &'a Self::Air,
+            aux_rand_elements: Option<AuxRandElements<E>>,
+            composition_coefficients: ConstraintCompositionCoefficients<E>,
+        ) -> Self::ConstraintEvaluator<'a, E> {
+            DefaultConstraintEvaluator::new(air, aux_rand_elements, composition_coefficients)
+        }
+        
+        fn build_constraint_commitment<E: FieldElement<BaseField = Self::BaseField>>(
+            &self,
+            composition_poly_trace: CompositionPolyTrace<E>,
+            num_constraint_composition_columns: usize,
+            domain: &StarkDomain<Self::BaseField>,
+            partition_options: PartitionOptions,
+        ) -> (Self::ConstraintCommitment<E>, CompositionPoly<E>) {
+            DefaultConstraintCommitment::new(
+                composition_poly_trace,
+                num_constraint_composition_columns,
+                domain,
+                partition_options,
+            )
+        }
+    }
+    
+    // Create an instance of our custom prover with the public inputs
+    let prover = VrfStarkProver {
+        options: self.options.clone(),
+        // Since we can't easily downcast without as_any, we'll use the stored public inputs
+        pub_inputs: match &self.pub_inputs {
+            Some(inputs) => inputs.clone(),
+            None => {
+                return Err(SomeError::ProofGenerationFailed(
+                    "No public inputs available".to_string(),
+                ));
+            }
+        },
+    };
+    
+    // Type safety check - this is a simplification:
+    // In a real implementation, you might want to reuse the same Air instance
+    // or check if the Air is compatible with FalconVrfAir
+    if let Some(inputs) = &self.pub_inputs {
+        // Create a new Air instance of the correct type
+        let falcon_air = FalconVrfAir::new(
+            trace.info().clone(),
+            inputs.clone(),
+            self.options.clone(),
+        );
+        
+        // Now try to generate a real proof using the Prover trait method
+        // The prove method takes ownership of the trace, so we need to clone it
+        let proof_result = winterfell::Prover::prove(&prover, trace.clone());
+        
+        match proof_result {
+            Ok(proof) => {
+                debug!("Successfully generated real STARK proof");
+                Ok(proof)
+            }
+            Err(err) => {
+                error!("Failed to generate proof: {:?}", err);
+                Err(SomeError::ProofGenerationFailed(format!("{:?}", err)))
+            }
+        }
+    } else {
+        Err(SomeError::ProofGenerationFailed(
+            "No public inputs available".to_string(),
+        ))
+    }
+}
 
     /// Helper method to encapsulate the real proof generation logic
     #[deprecated(note = "Use generate_real_proof instead")]
