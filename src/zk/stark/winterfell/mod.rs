@@ -12,7 +12,8 @@ pub mod vrf_trace;
 // pub mod config;
 // mod implementation;
 // Export core types
-pub use vrf_prover::{PerformanceMode, SomeError, VrfError, VrfProver, VrfPublicInputs};
+use crate::zk::stark::winterfell::vrf_air::VrfPublicInputs;
+pub use vrf_prover::{PerformanceMode, SomeError, VrfError, VrfProver};
 pub use vrf_trace::{build_vrf_trace, Felt, PrecomputedTables, TraceError};
 // Add a simple function to demonstrate the entire flow
 pub fn run_simple_example() -> Result<(), String> {
